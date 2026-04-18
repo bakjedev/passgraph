@@ -36,10 +36,13 @@ sources = files(
   'src/passgraph.cpp'
 )
 
-passgraph_lib = library('passgraph-lib', sources, include_directories: include_directories('src'))
+vulkan_dep = dependency('vulkan')
+
+passgraph_lib = library('passgraph-lib', sources, include_directories: include_directories('src'), dependencies: [vulkan_dep])
 passgraph_dep = declare_dependency(
   link_with: passgraph_lib,
-  include_directories: include_directories('src')
+  include_directories: include_directories('src'),
+  dependencies: [vulkan_dep]
 )
 
 gtest_dep = dependency('gtest', main: true, required: false)
