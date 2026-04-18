@@ -3,19 +3,22 @@ A C++ library that takes render passes with stage/access masks per required reso
 dependency graph, and creates the correct VkDependencyInfo structs to insert barriers for each
 pass. Using `VK_KHR_synchronization2`.
 
-## Build
+## Prerequisites
+- Vulkan SDK >= 1.3
+- Meson >= 1.1.0
+- Ninja
+- C++20 compiler
+- GoogleTest (not required if not running tests)
 
-Configure and build with meson:
+## Build
 ```
 meson setup build
 ```
-  
 ```
 meson compile -C build
 ```
 
-Run the tests:
+## Test
 ```
 meson test -C build
 ```
-gtest is required for the tests.
