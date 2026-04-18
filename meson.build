@@ -45,6 +45,6 @@ passgraph_dep = declare_dependency(
 gtest_dep = dependency('gtest', main: true, required: false)
 
 if gtest_dep.found()
-  tests_exe = executable('passgraph-tests', 'tests/test-passgraph.cpp', dependencies: [gtest_dep, passgraph_dep])
+  tests_exe = executable('passgraph-tests', 'tests/test_passgraph.cpp', dependencies: [gtest_dep, passgraph_dep])
   test('unit', tests_exe, protocol: 'gtest')
 endif
