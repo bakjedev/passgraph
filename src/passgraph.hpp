@@ -1,8 +1,17 @@
 #pragma once
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+class Pass;
 
 class PassGraph {
   public:
-    int GetAValue() const;
+    [[nodiscard]] Pass& AddPass(std::string name);
+
+    int Compile() const;
   private:
-    int value{};  
+    std::vector<Pass> passes_; 
+    std::unordered_map<std::string, uint32_t> pass_to_index_;
 };
