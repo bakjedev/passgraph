@@ -1,8 +1,26 @@
 #include "passgraph.hpp"
 #include "pass.hpp"
-#include <cstdio>
 
-Pass& PassGraph::AddPass(std::string name) {
+std::optional<passgraph::Graph::ResourceID> passgraph::Graph::ImportImage(VkImage image, VkImageView image_view,
+                                                                          VkFormat initial_format) {
+  if (image == VK_NULL_HANDLE || image_view == VK_NULL_HANDLE) {
+    return std::nullopt;
+  }
+  const auto id = static_cast<ResourceID>(images_.size());
+  images_.emplace_back(image, image_view, initial_format);
+  return id;
+}
+
+std::optional<passgraph::Graph::ResourceID> passgraph::Graph::ImportBuffer(VkBuffer buffer) {
+  if (buffer == VK_NULL_HANDLE) {
+    return std::nullopt;
+  }
+  const auto id = static_cast<ResourceID>(buffers_.size());
+  buffers_.emplace_back(buffer);
+  return id;
+}
+
+passgraph::Pass &passgraph::Graph::AddPass(std::string name) {
   auto itr = pass_to_index_.find(name);
   if (itr != pass_to_index_.end()) {
     return passes_[itr->second];
@@ -11,11 +29,6 @@ Pass& PassGraph::AddPass(std::string name) {
   return passes_.emplace_back();
 }
 
-int PassGraph::Compile() const {
-  for (const auto& pass : passes_) {
-    for (const auto& resource : pass.GetResources()) {
-      std::puts(resource.first.c_str());
-    }
-  }
+int passgraph::Graph::Compile() const {
   return 0;
 }
