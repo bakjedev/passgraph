@@ -1,22 +1,22 @@
 #include "passgraph.hpp"
 #include "pass.hpp"
 
-std::optional<passgraph::Graph::ResourceID> passgraph::Graph::ImportImage(VkImage image, VkImageView image_view,
-                                                                          VkFormat initial_format) {
-  if (image == VK_NULL_HANDLE || image_view == VK_NULL_HANDLE) {
+std::optional<passgraph::Graph::ResourceID> passgraph::Graph::ImportImage(VkImage image, VkFormat initial_format) {
+  if (image == VK_NULL_HANDLE) {
     return std::nullopt;
   }
   const auto id = static_cast<ResourceID>(images_.size());
-  images_.emplace_back(image, image_view, initial_format);
+  images_.emplace_back(image, initial_format);
   return id;
 }
 
-std::optional<passgraph::Graph::ResourceID> passgraph::Graph::ImportBuffer(VkBuffer buffer) {
+std::optional<passgraph::Graph::ResourceID>
+passgraph::Graph::ImportBuffer(VkBuffer buffer, BufferLayout initial_layout) {
   if (buffer == VK_NULL_HANDLE) {
     return std::nullopt;
   }
   const auto id = static_cast<ResourceID>(buffers_.size());
-  buffers_.emplace_back(buffer);
+  buffers_.emplace_back(buffer, initial_layout);
   return id;
 }
 
