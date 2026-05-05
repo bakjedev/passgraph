@@ -4,7 +4,10 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 #include <optional>
-#include "buffer_layout.hpp"
+
+#include "buffer_descriptor.hpp"
+#include "image_descriptor.hpp"
+
 
 namespace passgraph {
   class Pass;
@@ -13,30 +16,21 @@ namespace passgraph {
   public:
     using ResourceID = uint32_t;
 
-    [[nodiscard]] std::optional<ResourceID> ImportImage(VkImage image, VkFormat initial_format = VK_FORMAT_UNDEFINED);
+    [[nodiscard]] std::optional<ResourceID> import_image(VkImage image, const ImageDescriptor &desc);
 
-    [[nodiscard]] std::optional<ResourceID> ImportBuffer(VkBuffer buffer,
-                                                         BufferLayout initial_layout = BufferLayout::Undefined);
+    [[nodiscard]] std::optional<ResourceID> import_buffer(VkBuffer buffer, const BufferDescriptor &desc);
 
-    [[nodiscard]] Pass &AddPass(std::string name);
+    [[nodiscard]] Pass &add_pass(std::string name);
 
-    int Compile() const;
+    [[nodiscard]] std::unordered_map<std::string, VkDependencyInfo> compile() const;
 
   private:
-    std::vector<Pass> passes_;
-    std::unordered_map<std::string, uint32_t> pass_to_index_;
+    using Image = std::pair<VkImage, ImageDescriptor>;
+    using Buffer = std::pair<VkBuffer, BufferDescriptor>;
 
-    struct ImageInfo {
-      VkImage image;
-      VkFormat initial_format;
-    };
+    std::vector<Image> images_;
+    std::vector<Buffer> buffers_;
 
-    struct BufferInfo {
-      VkBuffer buffer;
-      BufferLayout initial_layout;
-    };
-
-    std::vector<ImageInfo> images_;
-    std::vector<BufferInfo> buffers_;
+    std::unordered_map<std::string, Pass> passes_;
   };
 } // namespace passgraph

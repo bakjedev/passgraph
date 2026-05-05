@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 
 enum class BufferLayout : uint32_t {
     Undefined = 1 << 0,

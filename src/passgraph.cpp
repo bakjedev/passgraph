@@ -1,34 +1,40 @@
 #include "passgraph.hpp"
 #include "pass.hpp"
 
-std::optional<passgraph::Graph::ResourceID> passgraph::Graph::ImportImage(VkImage image, VkFormat initial_format) {
+std::optional<passgraph::Graph::ResourceID> passgraph::Graph::import_image(VkImage image, const ImageDescriptor &desc) {
   if (image == VK_NULL_HANDLE) {
-    return std::nullopt;
+    //return std::nullopt;
   }
   const auto id = static_cast<ResourceID>(images_.size());
-  images_.emplace_back(image, initial_format);
+  images_.emplace_back(image, desc);
   return id;
 }
 
 std::optional<passgraph::Graph::ResourceID>
-passgraph::Graph::ImportBuffer(VkBuffer buffer, BufferLayout initial_layout) {
+passgraph::Graph::import_buffer(VkBuffer buffer, const BufferDescriptor &desc) {
   if (buffer == VK_NULL_HANDLE) {
-    return std::nullopt;
+    //return std::nullopt;
   }
   const auto id = static_cast<ResourceID>(buffers_.size());
-  buffers_.emplace_back(buffer, initial_layout);
+  buffers_.emplace_back(buffer, desc);
   return id;
 }
 
-passgraph::Pass &passgraph::Graph::AddPass(std::string name) {
-  auto itr = pass_to_index_.find(name);
-  if (itr != pass_to_index_.end()) {
-    return passes_[itr->second];
+passgraph::Pass &passgraph::Graph::add_pass(std::string name) {
+  auto itr = passes_.find(name);
+  if (itr != passes_.end()) {
+    return itr->second;
   }
-  pass_to_index_.emplace(std::move(name), static_cast<uint32_t>(passes_.size()));
-  return passes_.emplace_back();
+  return passes_[std::move(name)];
 }
 
-int passgraph::Graph::Compile() const {
-  return 0;
+std::unordered_map<std::string, VkDependencyInfo> passgraph::Graph::compile() const {
+  std::unordered_map<std::string, VkDependencyInfo> result;
+
+  for (const auto &[name, pass]: passes_) {
+    result.emplace(name, VkDependencyInfo{});
+  }
+
+  return result;
 }
+
