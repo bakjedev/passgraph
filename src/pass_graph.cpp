@@ -1,4 +1,4 @@
-#include "passgraph.hpp"
+#include "pass_graph.hpp"
 #include "types/pass.hpp"
 
 std::optional<passgraph::Graph::ResourceID>

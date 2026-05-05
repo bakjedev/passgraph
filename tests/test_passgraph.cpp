@@ -1,4 +1,4 @@
-#include "passgraph.hpp"
+#include "pass_graph.hpp"
 #include <gtest/gtest.h>
 
 TEST(Passgraph, SimpleTest) {

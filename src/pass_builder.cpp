@@ -1,5 +1,5 @@
 #include "pass_builder.hpp"
-#include "passgraph.hpp"
+#include "pass_graph.hpp"
 
 passgraph::PassBuilder::PassBuilder(Graph *graph, std::string name,
                                     const uint32_t id)
