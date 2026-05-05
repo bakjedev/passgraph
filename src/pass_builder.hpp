@@ -10,9 +10,9 @@ class PassBuilder {
 public:
   PassBuilder(Graph *graph, std::string name, uint32_t id);
 
-  PassBuilder &read(uint32_t resource_id);
+  [[nodiscard]] PassBuilder &read(uint32_t resource_id);
 
-  uint32_t build() const;
+  [[nodiscard]] uint32_t build() const;
 
 private:
   Graph *graph_ = nullptr;
