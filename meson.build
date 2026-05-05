@@ -34,7 +34,7 @@ add_project_arguments(extra_warnings, language : 'cpp')
 
 sources = files(
     'src/passgraph.cpp',
-    'src/pass.cpp'
+    'src/pass_builder.cpp'
 )
 
 vulkan_dep = dependency('vulkan')

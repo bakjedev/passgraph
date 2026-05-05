@@ -1,4 +1,3 @@
-#include "pass.hpp"
 #include "passgraph.hpp"
 #include <gtest/gtest.h>
 
@@ -11,7 +10,7 @@ TEST(Passgraph, SimpleTest) {
 
   EXPECT_TRUE(buf.has_value());
 
-  const auto render_pass = graph.add_pass("Render").read(*buf).id();
+  const auto render_pass = graph.add_pass("Render").read(*buf).build();
 
   const auto barriers = graph.compile();
 

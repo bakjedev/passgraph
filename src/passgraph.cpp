@@ -1,5 +1,5 @@
 #include "passgraph.hpp"
-#include "pass.hpp"
+#include "types/pass.hpp"
 
 std::optional<passgraph::Graph::ResourceID>
 passgraph::Graph::import_image(VkImage image, const ImageDescriptor &desc) {
@@ -21,9 +21,9 @@ passgraph::Graph::import_buffer(VkBuffer buffer, const BufferDescriptor &desc) {
   return id;
 }
 
-passgraph::Pass &passgraph::Graph::add_pass(std::string name) {
+passgraph::PassBuilder passgraph::Graph::add_pass(std::string name) {
   const auto id = static_cast<uint32_t>(passes_.size());
-  return passes_.emplace_back(std::move(name), id);
+  return PassBuilder{this, std::move(name), id};
 }
 
 std::vector<VkDependencyInfo> passgraph::Graph::compile() const {
@@ -34,4 +34,8 @@ std::vector<VkDependencyInfo> passgraph::Graph::compile() const {
   }
 
   return result;
+}
+
+void passgraph::Graph::insert_pass(Pass pass) {
+  passes_.push_back(std::move(pass));
 }
