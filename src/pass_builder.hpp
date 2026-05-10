@@ -1,24 +1,19 @@
 #pragma once
-#include "types/pass.hpp"
 #include <cstdint>
-#include <string>
+#include <functional>
 
 namespace passgraph {
-class Graph;
+  struct Pass;
 
-class PassBuilder {
-public:
-  PassBuilder(Graph *graph, std::string name, uint32_t id);
+  class PassBuilder {
+  public:
+    explicit PassBuilder(Pass *pass);
 
-  [[nodiscard]] PassBuilder &read(uint32_t resource_id);
+    PassBuilder &read(uint32_t resource_id);
 
-  [[nodiscard]] uint32_t build() const;
+    PassBuilder &execute(std::function<void()> func);
 
-private:
-  Graph *graph_ = nullptr;
-  uint32_t id_;
-
-  Pass pass_;
-};
-
+  private:
+    Pass *pass_;
+  };
 } // namespace passgraph

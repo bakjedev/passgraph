@@ -22,20 +22,17 @@ passgraph::Graph::import_buffer(VkBuffer buffer, const BufferDescriptor &desc) {
 }
 
 passgraph::PassBuilder passgraph::Graph::add_pass(std::string name) {
-  const auto id = static_cast<uint32_t>(passes_.size());
-  return PassBuilder{this, std::move(name), id};
+  passes_.emplace_back().name_ = std::move(name);
+  return PassBuilder{&passes_.back()};
 }
 
-std::vector<VkDependencyInfo> passgraph::Graph::compile() const {
-  std::vector<VkDependencyInfo> result;
+bool passgraph::Graph::compile() const {
+  return true;
+}
 
-  for ([[maybe_unused]] const auto &pass : passes_) {
-    result.emplace_back(VK_STRUCTURE_TYPE_DEPENDENCY_INFO);
+void passgraph::Graph::execute() const {
+  for (const Pass &pass: passes_) {
+    // insert pass.barrier whatever
+    pass.func_();
   }
-
-  return result;
-}
-
-void passgraph::Graph::insert_pass(Pass pass) {
-  passes_.push_back(std::move(pass));
 }
