@@ -1,29 +1,45 @@
 #include "pass_graph.hpp"
+#include <iostream>
 #include "types/pass.hpp"
 
-std::optional<passgraph::Graph::ResourceID>
-passgraph::Graph::import_image(VkImage image, const ImageDescriptor &desc) {
-  if (image == VK_NULL_HANDLE) {
-    // return std::nullopt;
+passgraph::ResourceID passgraph::Graph::import_image(std::string name, const ImageResource &image, VkImage raw) {
+  if (raw == VK_NULL_HANDLE) {
+    //return ResourceID{};
   }
-  const auto id = static_cast<ResourceID>(images_.size());
-  images_.emplace_back(image, desc);
-  return id;
+
+  const auto slot_id = images_.size();
+  images_.push_back(image);
+
+  const auto raw_id = raw_images_.size();
+  raw_images_.push_back(raw);
+
+  const auto id = resources_.size();
+  resources_.emplace_back(ResourceType::Image, slot_id, raw_id, std::move(name));
+
+  return ResourceID{id};
 }
 
-std::optional<passgraph::Graph::ResourceID>
-passgraph::Graph::import_buffer(VkBuffer buffer, const BufferDescriptor &desc) {
-  if (buffer == VK_NULL_HANDLE) {
-    // return std::nullopt;
+passgraph::ResourceID passgraph::Graph::import_buffer(std::string name, const BufferResource &buffer, VkBuffer raw) {
+  if (raw == VK_NULL_HANDLE) {
+    //return ResourceID{};
   }
-  const auto id = static_cast<ResourceID>(buffers_.size());
-  buffers_.emplace_back(buffer, desc);
-  return id;
+
+  const auto slot_id = buffers_.size();
+  buffers_.push_back(buffer);
+
+  const auto raw_id = raw_buffers_.size();
+  raw_buffers_.push_back(raw);
+
+  const auto id = resources_.size();
+  resources_.emplace_back(ResourceType::Buffer, slot_id, raw_id, std::move(name));
+
+  return ResourceID{id};
 }
 
 passgraph::PassBuilder passgraph::Graph::add_pass(std::string name) {
-  passes_.emplace_back().name_ = std::move(name);
-  return PassBuilder{&passes_.back()};
+  const auto id = passes_.size();
+  passes_.emplace_back().name = std::move(name);
+  return PassBuilder{&passes_.back(), this, id};
 }
 
 bool passgraph::Graph::compile() const {
@@ -33,6 +49,6 @@ bool passgraph::Graph::compile() const {
 void passgraph::Graph::execute() const {
   for (const Pass &pass: passes_) {
     // insert pass.barrier whatever
-    pass.func_();
+    pass.func();
   }
 }

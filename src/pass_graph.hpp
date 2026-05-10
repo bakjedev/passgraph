@@ -5,20 +5,17 @@
 #include <vulkan/vulkan.h>
 
 #include "pass_builder.hpp"
-#include "types/buffer_descriptor.hpp"
-#include "types/image_descriptor.hpp"
+#include "types/buffer_resource.hpp"
+#include "types/image_resource.hpp"
 #include "types/pass.hpp"
+#include "types/resource.hpp"
 
 namespace passgraph {
   class Graph {
   public:
-    using ResourceID = uint32_t;
+    [[nodiscard]] ResourceID import_image(std::string name, const ImageResource &image, VkImage raw);
 
-    [[nodiscard]] std::optional<ResourceID>
-    import_image(VkImage image, const ImageDescriptor &desc);
-
-    [[nodiscard]] std::optional<ResourceID>
-    import_buffer(VkBuffer buffer, const BufferDescriptor &desc);
+    [[nodiscard]] ResourceID import_buffer(std::string name, const BufferResource &buffer, VkBuffer raw);
 
     [[nodiscard]] PassBuilder add_pass(std::string name);
 
@@ -27,11 +24,15 @@ namespace passgraph {
     void execute() const;
 
   private:
-    using Image = std::pair<VkImage, ImageDescriptor>;
-    using Buffer = std::pair<VkBuffer, BufferDescriptor>;
+    friend class PassBuilder;
 
-    std::vector<Image> images_;
-    std::vector<Buffer> buffers_;
+    std::vector<Resource> resources_;
+
+    std::vector<ImageResource> images_;
+    std::vector<BufferResource> buffers_;
+
+    std::vector<VkImage> raw_images_;
+    std::vector<VkBuffer> raw_buffers_;
 
     std::vector<Pass> passes_;
   };

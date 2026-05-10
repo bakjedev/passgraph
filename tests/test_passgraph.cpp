@@ -4,16 +4,22 @@
 TEST(Passgraph, SimpleTest) {
     passgraph::Graph graph;
 
-    const auto buf =
-            graph.import_buffer(nullptr, {
-                                    .initial_layout = BufferLayout::Compute |
-                                                      BufferLayout::Vertex
-                                });
+    const auto buf = graph.import_buffer("Data", {.size = 0, .usage = 0u}, nullptr);
 
-    EXPECT_TRUE(buf.has_value());
+    const auto img = graph.import_image("RenderTarget", {
+                                            .x = 1920, .y = 1080, .z = 0, .format = VK_FORMAT_UNDEFINED,
+                                            .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+                                        }, nullptr);
 
-    graph.add_pass("Render").read(*buf).execute([] {
-        std::cout << "YEAH" << "\n";
+    EXPECT_TRUE(buf);
+    EXPECT_TRUE(img);
+
+    graph.add_pass("First").add_storage_output(buf).execute([] {
+        std::cout << "A" << "\n";
+    });
+
+    graph.add_pass("Second").add_storage_input(buf).add_color_output(img).execute([] {
+        std::cout << "B" << "\n";
     });
 
     EXPECT_TRUE(graph.compile());
