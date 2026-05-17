@@ -46,7 +46,7 @@ passgraph::PassBuilder passgraph::Graph::add_pass(std::string name)
   return PassBuilder{&passes_.back(), this, id};
 }
 
-bool passgraph::Graph::compile() const
+bool passgraph::Graph::compile()
 {
   // --------------
   // you like DAGs?
@@ -168,12 +168,18 @@ bool passgraph::Graph::compile() const
   for (const auto& sorted_pass: sorted_passes) {
     std::cout << sorted_pass << "\n";
   }
+
+  pass_dep_infos_.resize(passes_.size());
+
+  sorted_pass_ids_ = std::move(sorted_passes);
   return true;
 }
 
 void passgraph::Graph::execute() const
 {
-  for (const Pass& pass: passes_) {
+  for (const uint32_t pass_id: sorted_pass_ids_) {
+    auto& pass = passes_[pass_id];
+    [[maybe_unused]] const auto& dep_inf = pass_dep_infos_[pass_id];
     pass.func();
   }
 }

@@ -19,7 +19,7 @@ namespace passgraph {
 
     [[nodiscard]] PassBuilder add_pass(std::string name);
 
-    [[nodiscard]] bool compile() const;
+    [[nodiscard]] bool compile();
 
     void execute() const;
 
@@ -35,5 +35,8 @@ namespace passgraph {
     std::vector<VkBuffer> raw_buffers_;
 
     std::vector<Pass> passes_;
+
+    std::vector<uint32_t> sorted_pass_ids_;
+    std::vector<VkDependencyInfo> pass_dep_infos_;
   };
 } // namespace passgraph
