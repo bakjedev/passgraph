@@ -26,10 +26,19 @@ namespace passgraph {
   private:
     friend class PassBuilder;
 
+    struct DependencyInfo {
+      VkDependencyInfo dep_info;
+      std::vector<VkImageMemoryBarrier2> image_barriers;
+      std::vector<VkBufferMemoryBarrier2> buffer_barriers;
+    };
+
     std::vector<Resource> resources_;
 
     std::vector<ImageResource> images_;
     std::vector<BufferResource> buffers_;
+
+    std::vector<ImageState> image_states_;
+    std::vector<BufferState> buffer_states_;
 
     std::vector<VkImage> raw_images_;
     std::vector<VkBuffer> raw_buffers_;
@@ -37,6 +46,8 @@ namespace passgraph {
     std::vector<Pass> passes_;
 
     std::vector<uint32_t> sorted_pass_ids_;
-    std::vector<VkDependencyInfo> pass_dep_infos_;
+    std::vector<DependencyInfo> pass_dep_infos_;
+
+    void reset_resource_states();
   };
 } // namespace passgraph

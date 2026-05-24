@@ -17,7 +17,7 @@ namespace passgraph {
   };
 
   struct BufferAccess {
-    ResourceID id;
+    ResourceID resource;
     std::optional<uint32_t> pass;
 
     VkAccessFlags2 access = VK_ACCESS_2_NONE;
