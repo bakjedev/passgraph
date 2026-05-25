@@ -3,7 +3,8 @@
 #include <iostream>
 #include "types/pass.hpp"
 
-passgraph::ResourceID passgraph::Graph::import_image(const ImageResource& image, VkImage raw, std::string name)
+passgraph::ResourceID passgraph::Graph::import_image(const ImageResource& image, VkImage raw, VkImageView view,
+                                                     std::string name)
 {
   if (raw == VK_NULL_HANDLE) {
     // return ResourceID{};
@@ -15,6 +16,7 @@ passgraph::ResourceID passgraph::Graph::import_image(const ImageResource& image,
 
   const auto raw_id = raw_images_.size();
   raw_images_.push_back(raw);
+  raw_image_views_.push_back(view);
 
   const auto id = resources_.size();
   resources_.emplace_back(ResourceType::Image, slot_id, raw_id, std::move(name));
@@ -41,7 +43,7 @@ passgraph::ResourceID passgraph::Graph::import_buffer(const BufferResource& buff
   return ResourceID{id};
 }
 
-bool passgraph::Graph::update_image(const ResourceID resource, VkImage raw, const ImageState& state)
+bool passgraph::Graph::update_image(const ResourceID resource, VkImage raw, VkImageView view, const ImageState& state)
 {
   if (!resource.id.has_value()) {
     return false;
@@ -54,6 +56,7 @@ bool passgraph::Graph::update_image(const ResourceID resource, VkImage raw, cons
   // sorta unsafe
   images_[resources_[id].slot].state = state;
   raw_images_[resources_[id].raw] = raw;
+  raw_image_views_[resources_[id].raw] = view;
   return true;
 }
 

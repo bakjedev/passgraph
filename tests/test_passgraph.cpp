@@ -17,7 +17,7 @@ TEST(Passgraph, SimpleTest)
        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
        .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
        .state = {.access = VK_ACCESS_2_NONE, .stage = VK_PIPELINE_STAGE_2_NONE, .layout = VK_IMAGE_LAYOUT_UNDEFINED}},
-      nullptr, "RenderTarget");
+      nullptr, nullptr, "RenderTarget");
 
   EXPECT_TRUE(buf);
   EXPECT_TRUE(img);

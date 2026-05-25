@@ -360,7 +360,7 @@ int main()
        .state = {.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                  .stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                  .layout = VK_IMAGE_LAYOUT_UNDEFINED}},
-      swap_chain_images[0], "Swapchain image");
+      swap_chain_images[0], swap_chain_image_views[0], "Swapchain image");
 
   graph.add_pass(passgraph::QueueFlags::Graphics, "RenderPass")
       .add_color_attachment({.resource = swap_chain_image_import})
@@ -402,7 +402,7 @@ int main()
     VK_CHECK(vkBeginCommandBuffer(cmd, &cmd_begin_info));
 
     graph.update_image(
-        swap_chain_image_import, swap_chain_images[image_index],
+        swap_chain_image_import, swap_chain_images[image_index], swap_chain_image_views[image_index],
         {.access = VK_ACCESS_2_NONE, .stage = VK_PIPELINE_STAGE_2_NONE, .layout = VK_IMAGE_LAYOUT_UNDEFINED});
 
     graph.compile();

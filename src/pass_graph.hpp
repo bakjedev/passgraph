@@ -13,12 +13,13 @@
 namespace passgraph {
   class Graph {
   public:
-    [[nodiscard]] ResourceID import_image(const ImageResource& image, VkImage raw, std::string name = "Unnamed image");
+    [[nodiscard]] ResourceID import_image(const ImageResource& image, VkImage raw, VkImageView view,
+                                          std::string name = "Unnamed image");
 
     [[nodiscard]] ResourceID import_buffer(const BufferResource& buffer, VkBuffer raw,
                                            std::string name = "Unnamed buffer");
 
-    bool update_image(ResourceID resource, VkImage raw, const ImageState& state);
+    bool update_image(ResourceID resource, VkImage raw, VkImageView view, const ImageState& state);
     bool update_buffer(ResourceID resource, VkBuffer raw, const BufferState& state);
 
     bool set_image_end_state(ResourceID resource, const ImageState& state);
@@ -45,6 +46,7 @@ namespace passgraph {
     std::vector<BufferResource> buffers_;
 
     std::vector<VkImage> raw_images_;
+    std::vector<VkImageView> raw_image_views_;
     std::vector<VkBuffer> raw_buffers_;
 
     std::vector<Pass> passes_;
