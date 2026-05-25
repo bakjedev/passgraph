@@ -362,8 +362,6 @@ int main()
                  .layout = VK_IMAGE_LAYOUT_UNDEFINED}},
       swap_chain_images[0], "Swapchain image");
 
-  uint32_t frame_index = 0;
-
   graph.add_pass(passgraph::QueueFlags::Graphics, "RenderPass")
       .add_color_attachment({.resource = swap_chain_image_import})
       .execute([]([[maybe_unused]] VkCommandBuffer cmd) {
@@ -375,6 +373,7 @@ int main()
       swap_chain_image_import,
       {.access = VK_ACCESS_2_NONE, .stage = VK_PIPELINE_STAGE_2_NONE, .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR});
 
+  uint32_t frame_index = 0;
   while (!glfwWindowShouldClose(window)) {
     VK_CHECK(vkWaitForFences(device, 1, &fences[frame_index], true, UINT64_MAX));
     VK_CHECK(vkResetFences(device, 1, &fences[frame_index]));
