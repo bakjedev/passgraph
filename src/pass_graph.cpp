@@ -301,7 +301,10 @@ bool passgraph::Graph::compile()
     switch (resource.type) {
       case ResourceType::Image: {
         ImageResource& image = images_[resource.slot];
-        const ImageState& state = end_image_states_[resource.slot].value(); // sorta unsafe
+        const auto& state_optional = end_image_states_[resource.slot];
+        if (!state_optional) break;
+        const ImageState& state = state_optional.value();
+
         end_dep_info_.image_barriers.push_back({.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                                                 .pNext = nullptr,
                                                 .srcStageMask = image.state.stage,
@@ -323,7 +326,10 @@ bool passgraph::Graph::compile()
       }
       case ResourceType::Buffer: {
         BufferResource& buffer = buffers_[resource.slot];
-        const BufferState& state = end_buffer_states_[resource.slot].value(); // sorta unsafe
+        const auto& state_optional = end_buffer_states_[resource.slot];
+        if (!state_optional) break;
+        const BufferState& state = state_optional.value();
+
         end_dep_info_.buffer_barriers.push_back({.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
                                                  .pNext = nullptr,
                                                  .srcStageMask = buffer.state.stage,
