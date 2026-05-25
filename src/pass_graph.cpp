@@ -3,7 +3,7 @@
 #include <iostream>
 #include "types/pass.hpp"
 
-passgraph::ResourceID passgraph::Graph::import_image(std::string name, const ImageResource& image, VkImage raw)
+passgraph::ResourceID passgraph::Graph::import_image(const ImageResource& image, VkImage raw, std::string name)
 {
   if (raw == VK_NULL_HANDLE) {
     // return ResourceID{};
@@ -21,7 +21,7 @@ passgraph::ResourceID passgraph::Graph::import_image(std::string name, const Ima
   return ResourceID{id};
 }
 
-passgraph::ResourceID passgraph::Graph::import_buffer(std::string name, const BufferResource& buffer, VkBuffer raw)
+passgraph::ResourceID passgraph::Graph::import_buffer(const BufferResource& buffer, VkBuffer raw, std::string name)
 {
   if (raw == VK_NULL_HANDLE) {
     // return ResourceID{};
@@ -39,7 +39,7 @@ passgraph::ResourceID passgraph::Graph::import_buffer(std::string name, const Bu
   return ResourceID{id};
 }
 
-passgraph::PassBuilder passgraph::Graph::add_pass(std::string name, const QueueFlags queue_flags)
+passgraph::PassBuilder passgraph::Graph::add_pass(const QueueFlags queue_flags, std::string name)
 {
   const auto id = passes_.size();
   Pass& pass = passes_.emplace_back();

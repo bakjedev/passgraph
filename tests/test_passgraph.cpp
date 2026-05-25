@@ -6,12 +6,10 @@ TEST(Passgraph, SimpleTest)
   passgraph::Graph graph;
 
   const auto buf = graph.import_buffer(
-      "Data",
       {.size = 0, .usage = 0u, .initial_state = {.access = VK_ACCESS_2_NONE, .stage = VK_PIPELINE_STAGE_2_NONE}},
-      nullptr);
+      nullptr, "Data");
 
-  const auto img = graph.import_image("RenderTarget",
-                                      {.x = 1920,
+  const auto img = graph.import_image({.x = 1920,
                                        .y = 1080,
                                        .z = 0,
                                        .format = VK_FORMAT_R32G32B32A32_SFLOAT,
@@ -19,16 +17,16 @@ TEST(Passgraph, SimpleTest)
                                        .initial_state = {.access = VK_ACCESS_2_NONE,
                                                          .stage = VK_PIPELINE_STAGE_2_NONE,
                                                          .layout = VK_IMAGE_LAYOUT_UNDEFINED}},
-                                      nullptr);
+                                      nullptr, "RenderTarget");
 
   EXPECT_TRUE(buf);
   EXPECT_TRUE(img);
 
-  graph.add_pass("First", passgraph::QueueFlags::Graphics)
+  graph.add_pass(passgraph::QueueFlags::Graphics, "First")
       .add_color_attachment({.resource = img})
       .execute([](VkCommandBuffer) { std::cout << "A" << "\n"; });
 
-  graph.add_pass("Second", passgraph::QueueFlags::Graphics)
+  graph.add_pass(passgraph::QueueFlags::Graphics, "Second")
       .add_color_attachment({.resource = img, .load_op = passgraph::LoadOp::Load})
       .execute([](VkCommandBuffer) { std::cout << "B" << "\n"; });
 

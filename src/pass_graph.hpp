@@ -13,11 +13,12 @@
 namespace passgraph {
   class Graph {
   public:
-    [[nodiscard]] ResourceID import_image(std::string name, const ImageResource& image, VkImage raw);
+    [[nodiscard]] ResourceID import_image(const ImageResource& image, VkImage raw, std::string name = "Unnamed image");
 
-    [[nodiscard]] ResourceID import_buffer(std::string name, const BufferResource& buffer, VkBuffer raw);
+    [[nodiscard]] ResourceID import_buffer(const BufferResource& buffer, VkBuffer raw,
+                                           std::string name = "Unnamed buffer");
 
-    [[nodiscard]] PassBuilder add_pass(std::string name, QueueFlags queue_flags);
+    [[nodiscard]] PassBuilder add_pass(QueueFlags queue_flags, std::string name = "Unnamed pass");
 
     [[nodiscard]] bool compile();
 
