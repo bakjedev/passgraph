@@ -395,7 +395,7 @@ int main()
 
     passgraph::Graph graph = context.create_graph();
 
-    graph.add_pass(passgraph::QueueFlags::Graphics, "RenderPass")
+    graph.add_graphics_pass("RenderPass")
         .add_color_attachment({.resource = swap_chain_imports[image_index]})
         .execute([]([[maybe_unused]] VkCommandBuffer cb) {
           // whatever

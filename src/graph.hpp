@@ -18,7 +18,7 @@ namespace passgraph {
     void set_image_end_state(ResourceID resource, const ImageState& state);
     void set_buffer_end_state(ResourceID resource, const BufferState& state);
 
-    [[nodiscard]] PassBuilder add_pass(QueueFlags queue_flags, std::string name = "Unnamed pass");
+    [[nodiscard]] GraphicsPassBuilder add_graphics_pass(std::string name = "Unnamed pass");
 
     bool compile();
 
@@ -26,7 +26,7 @@ namespace passgraph {
 
   private:
     friend Context;
-    friend PassBuilder;
+    friend GraphicsPassBuilder;
     explicit Graph(Context* context) : context_(context) {}
 
     struct DependencyInfo {

@@ -2,13 +2,13 @@
 #include "graph.hpp"
 #include "types/pass.hpp"
 
-passgraph::PassBuilder::PassBuilder(Pass* pass, Graph* graph, const size_t id) :
+passgraph::GraphicsPassBuilder::GraphicsPassBuilder(Pass* pass, Graph* graph, const size_t id) :
     pass_(pass), graph_(graph), id_(static_cast<uint32_t>(id))
 {
 }
 
 
-passgraph::PassBuilder& passgraph::PassBuilder::add_color_attachment(const AttachmentInfo& info)
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::add_color_attachment(const AttachmentInfo& info)
 {
   auto& res = graph_->resource_infos_[info.resource];
   res.write_passes.insert(id_);
@@ -26,7 +26,7 @@ passgraph::PassBuilder& passgraph::PassBuilder::add_color_attachment(const Attac
   return *this;
 }
 
-passgraph::PassBuilder& passgraph::PassBuilder::add_depth_attachment(const AttachmentInfo& info)
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::add_depth_attachment(const AttachmentInfo& info)
 {
   auto& res = graph_->resource_infos_[info.resource];
   res.write_passes.insert(id_);
@@ -45,7 +45,7 @@ passgraph::PassBuilder& passgraph::PassBuilder::add_depth_attachment(const Attac
   return *this;
 }
 
-passgraph::PassBuilder& passgraph::PassBuilder::execute(std::function<void(VkCommandBuffer)> func)
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::execute(std::function<void(VkCommandBuffer)> func)
 {
   pass_->func = std::move(func);
   return *this;

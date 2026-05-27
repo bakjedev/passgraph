@@ -14,14 +14,14 @@ namespace passgraph {
     std::optional<uint32_t> pass = std::nullopt;
   };
 
-  class PassBuilder {
+  class GraphicsPassBuilder {
   public:
-    explicit PassBuilder(Pass* pass, Graph* graph, size_t id);
+    explicit GraphicsPassBuilder(Pass* pass, Graph* graph, size_t id);
 
-    PassBuilder& add_color_attachment(const AttachmentInfo& info);
-    PassBuilder& add_depth_attachment(const AttachmentInfo& info);
+    GraphicsPassBuilder& add_color_attachment(const AttachmentInfo& info);
+    GraphicsPassBuilder& add_depth_attachment(const AttachmentInfo& info);
 
-    PassBuilder& execute(std::function<void(VkCommandBuffer)> func);
+    GraphicsPassBuilder& execute(std::function<void(VkCommandBuffer)> func);
 
     [[nodiscard]] uint32_t id() const { return id_; }
 

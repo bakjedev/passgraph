@@ -3,7 +3,6 @@
 #include <optional>
 #include <string>
 #include <vulkan/vulkan.h>
-#include "queue_flags.hpp"
 #include "resource.hpp"
 
 namespace passgraph {
@@ -30,6 +29,5 @@ namespace passgraph {
     std::function<void(VkCommandBuffer cmd)> func;
     std::vector<ImageAccess> images;
     std::vector<BufferAccess> buffers;
-    QueueFlags queue_flags;
   };
 } // namespace passgraph

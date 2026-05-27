@@ -15,13 +15,11 @@ void passgraph::Graph::set_buffer_end_state(const ResourceID resource, const Buf
   end_buffer_states_[resource] = state;
 }
 
-passgraph::PassBuilder passgraph::Graph::add_pass(const QueueFlags queue_flags, std::string name)
+passgraph::GraphicsPassBuilder passgraph::Graph::add_graphics_pass(std::string name)
 {
   const auto id = passes_.size();
-  Pass& pass = passes_.emplace_back();
-  pass.name = std::move(name);
-  pass.queue_flags = queue_flags;
-  return PassBuilder{&passes_.back(), this, id};
+  passes_.emplace_back().name = std::move(name);
+  return GraphicsPassBuilder{&passes_.back(), this, id};
 }
 
 bool passgraph::Graph::compile()
