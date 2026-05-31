@@ -2,12 +2,6 @@
 #include "graph.hpp"
 #include "types/pass.hpp"
 
-passgraph::GraphicsPassBuilder::GraphicsPassBuilder(Pass* pass, Graph* graph, const size_t id) :
-    pass_(pass), graph_(graph), id_(static_cast<uint32_t>(id))
-{
-}
-
-
 passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_color_attachment(const AttachmentInfo& info)
 {
   auto& res = graph_->resource_infos_[info.resource];
@@ -55,14 +49,45 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_depth_attach
   return *this;
 }
 
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_vertex_buffer_input(const ResourceID resource)
+{
+  set_buffer_input(resource, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT);
+  return *this;
+}
+
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_index_buffer_input(const ResourceID resource)
+{
+  set_buffer_input(resource, VK_ACCESS_2_INDEX_READ_BIT, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT);
+  return *this;
+}
+
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_indirect_buffer_input(const ResourceID resource)
+{
+  set_buffer_input(resource, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT);
+  return *this;
+}
+
 passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_render_area(const RenderArea area)
 {
   pass_->render_area = area;
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::execute(std::function<void(VkCommandBuffer)> func)
+template<typename T>
+T& passgraph::PassBuilder<T>::execute(std::function<void(VkCommandBuffer)> func)
 {
   pass_->func = std::move(func);
-  return *this;
+  return static_cast<T&>(*this);
 }
+
+template<typename T>
+void passgraph::PassBuilder<T>::set_buffer_input(ResourceID resource, VkAccessFlags2 access,
+                                                 VkPipelineStageFlags2 stage) const
+{
+  auto& res = graph_->resource_infos_[resource];
+  res.read_passes.insert(id_);
+
+  pass_->buffers.emplace_back(resource, std::nullopt, access, stage);
+}
+
+template class passgraph::PassBuilder<passgraph::GraphicsPassBuilder>;

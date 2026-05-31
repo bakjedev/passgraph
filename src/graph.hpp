@@ -26,7 +26,10 @@ namespace passgraph {
 
   private:
     friend Context;
-    friend GraphicsPassBuilder;
+    template<typename T>
+    friend class PassBuilder;
+    friend class GraphicsPassBuilder;
+
     explicit Graph(Context* context) : context_(context) {}
 
     struct DependencyInfo {
