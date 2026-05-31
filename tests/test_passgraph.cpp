@@ -20,14 +20,14 @@ TEST(Passgraph, SimpleTest)
   EXPECT_TRUE(buf);
   EXPECT_TRUE(img);
 
-  passgraph::Graph graph = context.create_graph();
+  passgraph::Graph& graph = context.graph();
 
-  graph.add_graphics_pass("First").set_color_attachment({.resource = img}).execute([](VkCommandBuffer) {
+  graph.add_graphics_pass("First").set_color_attachment({.resource = {img}}).execute([](VkCommandBuffer) {
     std::cout << "A" << "\n";
   });
 
   graph.add_graphics_pass("Second")
-      .set_color_attachment({.resource = img, .load_op = passgraph::LoadOp::Load})
+      .set_color_attachment({.resource = {img}, .load_op = passgraph::LoadOp::Load})
       .execute([](VkCommandBuffer) { std::cout << "B" << "\n"; });
 
   EXPECT_TRUE(graph.compile());

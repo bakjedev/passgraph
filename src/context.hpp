@@ -22,7 +22,7 @@ namespace passgraph {
     [[nodiscard]] ResourceID import_buffer(const I& buffer, const BufferState& state,
                                            std::string name = "Unnamed buffer");
 
-    [[nodiscard]] Graph create_graph() { return Graph{this}; }
+    [[nodiscard]] Graph& graph() { return graph_; }
 
 
   private:
@@ -35,6 +35,8 @@ namespace passgraph {
     std::vector<VkImage> raw_images_;
     std::vector<VkImageView> raw_image_views_;
     std::vector<VkBuffer> raw_buffers_;
+
+    Graph graph_{this};
   };
 } // namespace passgraph
 

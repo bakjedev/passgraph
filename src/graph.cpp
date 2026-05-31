@@ -24,6 +24,14 @@ passgraph::GraphicsPassBuilder passgraph::Graph::add_graphics_pass(std::string n
 
 bool passgraph::Graph::compile()
 {
+  // -------------------
+  // Reset compiled data
+  // -------------------
+  sorted_pass_ids_.clear();
+  end_dep_info_ = {};
+  pass_dep_infos_.clear();
+  rendering_infos_.clear();
+
   // --------------
   // you like DAGs?
   // --------------
@@ -306,7 +314,7 @@ bool passgraph::Graph::compile()
   return true;
 }
 
-void passgraph::Graph::execute(VkCommandBuffer cmd) const
+void passgraph::Graph::execute(VkCommandBuffer cmd)
 {
   if (!cmd) return;
   for (const uint32_t pass_id: sorted_pass_ids_) {
@@ -319,4 +327,12 @@ void passgraph::Graph::execute(VkCommandBuffer cmd) const
     if (optional_rendering_info) vkCmdEndRendering(cmd);
   }
   vkCmdPipelineBarrier2(cmd, &end_dep_info_.dep_info);
+
+  // -------------------
+  // Reset supplied data
+  // -------------------
+  passes_.clear();
+  resource_infos_.clear();
+  end_image_states_.clear();
+  end_buffer_states_.clear();
 }

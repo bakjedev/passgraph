@@ -393,10 +393,10 @@ int main()
                                             .pInheritanceInfo = nullptr};
     VK_CHECK(vkBeginCommandBuffer(cmd, &cmd_begin_info));
 
-    passgraph::Graph graph = context.create_graph();
+    passgraph::Graph& graph = context.graph();
 
     graph.add_graphics_pass("RenderPass")
-        .set_color_attachment({.resource = swap_chain_imports[image_index], .store_op = passgraph::StoreOp::Store})
+        .set_color_attachment({.resource = {swap_chain_imports[image_index]}, .store_op = passgraph::StoreOp::Store})
         .execute([]([[maybe_unused]] VkCommandBuffer cb) {
           // whatever
           std::cout << "whatever\n";

@@ -22,7 +22,7 @@ namespace passgraph {
 
     bool compile();
 
-    void execute(VkCommandBuffer cmd) const;
+    void execute(VkCommandBuffer cmd);
 
   private:
     friend Context;
