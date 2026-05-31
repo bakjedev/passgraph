@@ -21,6 +21,11 @@ namespace passgraph {
     ClearValue clear_value{};
   };
 
+  struct TextureInfo {
+    ResourceAccess resource;
+    VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_NONE;
+  };
+
 
   template<typename T>
   class PassBuilder {
@@ -30,7 +35,9 @@ namespace passgraph {
     {
     }
 
-    T& execute(std::function<void(VkCommandBuffer)> func);
+    T& set_texture_input(const TextureInfo& info);
+
+    T& set_execute(std::function<void(VkCommandBuffer)> func);
     [[nodiscard]] uint32_t id() const { return id_; }
 
   protected:

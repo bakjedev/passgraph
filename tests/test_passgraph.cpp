@@ -22,13 +22,18 @@ TEST(Passgraph, SimpleTest)
 
   passgraph::Graph& graph = context.graph();
 
-  graph.add_graphics_pass("First").set_color_attachment({.resource = {img}}).execute([](VkCommandBuffer) {
-    std::cout << "A" << "\n";
+  const uint32_t first = graph.add_graphics_pass("First")
+                             .set_color_attachment({.resource = {img}})
+                             .set_execute([](VkCommandBuffer) { std::cout << "A" << "\n"; })
+                             .id();
+
+  graph.add_graphics_pass("Second").set_color_attachment({.resource = {img}}).set_execute([](VkCommandBuffer) {
+    std::cout << "B" << "\n";
   });
 
-  graph.add_graphics_pass("Second")
-      .set_color_attachment({.resource = {img}, .load_op = passgraph::LoadOp::Load})
-      .execute([](VkCommandBuffer) { std::cout << "B" << "\n"; });
+  graph.add_graphics_pass("Third").set_texture_input({.resource = {img, first}}).set_execute([](VkCommandBuffer) {
+    std::cout << "C" << "\n";
+  });
 
   EXPECT_TRUE(graph.compile());
 

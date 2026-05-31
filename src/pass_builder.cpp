@@ -89,7 +89,23 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_render_area(
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::execute(std::function<void(VkCommandBuffer)> func)
+T& passgraph::PassBuilder<T>::set_texture_input(const TextureInfo& info)
+{
+  if (accessed_.contains(info.resource.id)) return static_cast<T&>(*this);
+  accessed_.insert(info.resource.id);
+  auto& res = graph_->resource_infos_[info.resource.id];
+  res.read_passes.insert(id_);
+  if (info.resource.pass) {
+    res.read_deps[id_] = *info.resource.pass;
+  }
+
+  pass_->images.emplace_back(info.resource.id, std::nullopt, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, info.stage,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  return static_cast<T&>(*this);
+}
+
+template<typename T>
+T& passgraph::PassBuilder<T>::set_execute(std::function<void(VkCommandBuffer)> func)
 {
   pass_->func = std::move(func);
   return static_cast<T&>(*this);

@@ -85,8 +85,17 @@ bool passgraph::Graph::compile()
           uint32_t write_access = it->second;
           assert(info.write_passes.contains(write_access));
 
+          // add edge from the explicit write pass to this pass
           dag[current_access].first.insert(write_access);
           dag[write_access].second.insert(current_access);
+
+          // add edges from this pass to all other write passes of this resource
+          for (const uint32_t other_write: info.write_passes) {
+            if (other_write != write_access && other_write != current_access) {
+              dag[other_write].first.insert(current_access);
+              dag[current_access].second.insert(other_write);
+            }
+          }
 
           previous_access = current_access;
           previous_write = false;
