@@ -125,15 +125,16 @@ bool passgraph::Graph::compile()
     sorted_pass_ids_ = std::move(sorted_passes);
   }
 
-  // --------------------
-  // Create pass barriers
-  // --------------------
+  // ----------------------------------------
+  // Create pass barriers and rendering infos
+  // ----------------------------------------
   pass_dep_infos_.resize(passes_.size());
+  rendering_infos_.resize(passes_.size());
 
   for (const uint32_t pass_id: sorted_pass_ids_) {
     Pass& pass = passes_[pass_id];
     auto& [dep_info, image_barriers, buffer_barriers] = pass_dep_infos_[pass_id];
-
+    auto& optional_rendering_info = rendering_infos_[pass_id];
     dep_info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     dep_info.dependencyFlags = 0u;
 
@@ -160,9 +161,49 @@ bool passgraph::Graph::compile()
         barrier.subresourceRange.levelCount = 1;
         image.state = new_state;
       }
+
+      // rendering attachment
+      if (image_access.attachment) {
+        if (!optional_rendering_info.has_value()) {
+          optional_rendering_info.emplace();
+        }
+        auto& rendering_info = *optional_rendering_info;
+        const Attachment& attachment = *image_access.attachment;
+        VkRenderingAttachmentInfo attachment_info{.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                                                  .pNext = nullptr,
+                                                  .imageView = context_->raw_image_views_[resource.raw],
+                                                  .imageLayout = image.state.layout,
+                                                  .resolveMode = VK_RESOLVE_MODE_NONE,
+                                                  .resolveImageView = nullptr,
+                                                  .resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                                                  .loadOp = attachment.load_op,
+                                                  .storeOp = attachment.store_op,
+                                                  .clearValue = {}};
+        if (attachment.is_depth) {
+          rendering_info.depth_info = attachment_info;
+        } else {
+          rendering_info.attachment_infos.push_back(attachment_info);
+        }
+        rendering_info.rendering_info.renderArea.extent = {
+            .width = std::max(image.x, rendering_info.rendering_info.renderArea.extent.width),
+            .height = std::max(image.y, rendering_info.rendering_info.renderArea.extent.height)};
+      }
     }
     dep_info.imageMemoryBarrierCount = static_cast<uint32_t>(image_barriers.size());
     dep_info.pImageMemoryBarriers = image_barriers.data();
+
+    // rendering info
+    if (optional_rendering_info) {
+      auto& rendering_info = *optional_rendering_info;
+      rendering_info.rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+      rendering_info.rendering_info.layerCount = 1;
+      rendering_info.rendering_info.colorAttachmentCount =
+          static_cast<uint32_t>(rendering_info.attachment_infos.size());
+      rendering_info.rendering_info.pColorAttachments = rendering_info.attachment_infos.data();
+      if (rendering_info.depth_info) {
+        rendering_info.rendering_info.pDepthAttachment = &*rendering_info.depth_info;
+      }
+    }
 
     // buffer memory barriers
     for (const BufferAccess& buffer_access: pass.buffers) {
@@ -244,10 +285,11 @@ void passgraph::Graph::execute(VkCommandBuffer cmd) const
   for (const uint32_t pass_id: sorted_pass_ids_) {
     auto& pass = passes_[pass_id];
     const auto& dep_info = pass_dep_infos_[pass_id];
+    const auto& optional_rendering_info = rendering_infos_[pass_id];
     vkCmdPipelineBarrier2(cmd, &dep_info.dep_info);
-    // if (pass.rendering) vkCmdBeginRendering(cmd, pass.render_info);
+    if (optional_rendering_info) vkCmdBeginRendering(cmd, &optional_rendering_info->rendering_info);
     pass.func(cmd);
-    // if (pass.rendering) vkCmdEndRendering(cmd);
+    if (optional_rendering_info) vkCmdEndRendering(cmd);
   }
   vkCmdPipelineBarrier2(cmd, &end_dep_info_.dep_info);
 }

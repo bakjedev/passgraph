@@ -8,14 +8,18 @@ passgraph::GraphicsPassBuilder::GraphicsPassBuilder(Pass* pass, Graph* graph, co
 }
 
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::add_color_attachment(const AttachmentInfo& info)
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_color_attachment(const AttachmentInfo& info)
 {
   auto& res = graph_->resource_infos_[info.resource];
   res.write_passes.insert(id_);
 
   ImageAccess& image = pass_->images.emplace_back(
-      info.resource, info.pass ? info.pass : res.last_writer, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+      info.resource, info.pass ? info.pass : res.last_writer,
+      Attachment{.load_op = static_cast<VkAttachmentLoadOp>(info.load_op),
+                 .store_op = static_cast<VkAttachmentStoreOp>(info.store_op),
+                 .is_depth = false},
+      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
   if (info.load_op == LoadOp::Load && res.last_writer.has_value()) {
     res.read_passes.insert(id_);
@@ -26,13 +30,17 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::add_color_attach
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::add_depth_attachment(const AttachmentInfo& info)
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_depth_attachment(const AttachmentInfo& info)
 {
   auto& res = graph_->resource_infos_[info.resource];
   res.write_passes.insert(id_);
 
   ImageAccess& image = pass_->images.emplace_back(
-      info.resource, info.pass ? info.pass : res.last_writer, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+      info.resource, info.pass ? info.pass : res.last_writer,
+      Attachment{.load_op = static_cast<VkAttachmentLoadOp>(info.load_op),
+                 .store_op = static_cast<VkAttachmentStoreOp>(info.store_op),
+                 .is_depth = true},
+      VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
       VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 

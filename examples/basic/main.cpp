@@ -396,7 +396,7 @@ int main()
     passgraph::Graph graph = context.create_graph();
 
     graph.add_graphics_pass("RenderPass")
-        .add_color_attachment({.resource = swap_chain_imports[image_index]})
+        .set_color_attachment({.resource = swap_chain_imports[image_index], .store_op = passgraph::StoreOp::Store})
         .execute([]([[maybe_unused]] VkCommandBuffer cb) {
           // whatever
           std::cout << "whatever\n";

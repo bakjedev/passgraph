@@ -6,11 +6,13 @@
 namespace passgraph {
   class Graph;
 
-  enum class LoadOp { Load, Clear, DontCare };
+  enum class LoadOp { Load = 0, Clear = 1, DontCare = 2 };
+  enum class StoreOp { Store = 0, DontCare = 1 };
 
   struct AttachmentInfo {
     ResourceID resource;
     LoadOp load_op = LoadOp::DontCare;
+    StoreOp store_op = StoreOp::DontCare;
     std::optional<uint32_t> pass = std::nullopt;
   };
 
@@ -18,8 +20,8 @@ namespace passgraph {
   public:
     explicit GraphicsPassBuilder(Pass* pass, Graph* graph, size_t id);
 
-    GraphicsPassBuilder& add_color_attachment(const AttachmentInfo& info);
-    GraphicsPassBuilder& add_depth_attachment(const AttachmentInfo& info);
+    GraphicsPassBuilder& set_color_attachment(const AttachmentInfo& info);
+    GraphicsPassBuilder& set_depth_attachment(const AttachmentInfo& info);
 
     GraphicsPassBuilder& execute(std::function<void(VkCommandBuffer)> func);
 

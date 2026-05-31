@@ -6,9 +6,16 @@
 #include "resource.hpp"
 
 namespace passgraph {
+  struct Attachment {
+    VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    bool is_depth = false;
+  };
+
   struct ImageAccess {
     ResourceID resource;
     std::optional<uint32_t> pass;
+    std::optional<Attachment> attachment;
 
     VkAccessFlags2 access = VK_ACCESS_2_NONE;
     VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_NONE;

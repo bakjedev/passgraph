@@ -35,6 +35,12 @@ namespace passgraph {
       std::vector<VkBufferMemoryBarrier2> buffer_barriers;
     };
 
+    struct RenderingInfo {
+      VkRenderingInfo rendering_info{};
+      std::vector<VkRenderingAttachmentInfo> attachment_infos;
+      std::optional<VkRenderingAttachmentInfo> depth_info;
+    };
+
     struct ResourceInfo {
       std::unordered_set<uint32_t> write_passes;
       std::unordered_set<uint32_t> read_passes;
@@ -47,6 +53,7 @@ namespace passgraph {
 
     std::vector<uint32_t> sorted_pass_ids_;
     std::vector<DependencyInfo> pass_dep_infos_;
+    std::vector<std::optional<RenderingInfo>> rendering_infos_;
 
     std::unordered_map<ResourceID, ImageState> end_image_states_;
     std::unordered_map<ResourceID, BufferState> end_buffer_states_;
