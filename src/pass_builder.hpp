@@ -21,10 +21,7 @@ namespace passgraph {
     ClearValue clear_value{};
   };
 
-  struct TextureInfo {
-    ResourceAccess resource;
-    VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_NONE;
-  };
+
 
 
   template<typename T>
@@ -35,7 +32,11 @@ namespace passgraph {
     {
     }
 
-    T& set_texture_input(const TextureInfo& info);
+    T& set_texture_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
+    T& set_uniform_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
+    T& set_storage_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
+    T& set_storage_buffer_write(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
+    T& set_storage_image_write(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
 
     T& set_execute(std::function<void(VkCommandBuffer)> func);
     [[nodiscard]] uint32_t id() const { return id_; }
@@ -46,7 +47,7 @@ namespace passgraph {
     uint32_t id_;
     std::unordered_set<ResourceID> accessed_;
 
-    void set_buffer_input(const ResourceAccess& resource, VkAccessFlags2 access, VkPipelineStageFlags2 stage);
+    void set_buffer_read(const ResourceAccess& resource, VkAccessFlags2 access, VkPipelineStageFlags2 stages);
   };
 
   class GraphicsPassBuilder : public PassBuilder<GraphicsPassBuilder> {

@@ -31,7 +31,7 @@ TEST(Passgraph, SimpleTest)
     std::cout << "B" << "\n";
   });
 
-  graph.add_graphics_pass("Third").set_texture_input({.resource = {img, first}}).set_execute([](VkCommandBuffer) {
+  graph.add_graphics_pass("Third").set_texture_read( {img, first}).set_execute([](VkCommandBuffer) {
     std::cout << "C" << "\n";
   });
 

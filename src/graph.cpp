@@ -37,7 +37,7 @@ bool passgraph::Graph::compile()
   std::vector<std::pair<std::unordered_set<uint32_t>, std::unordered_set<uint32_t>>> dag{passes_.size()};
   // first = incoming, second = outgoing
 
-  for (const auto& [_, info]: resource_infos_) {
+  for (const auto& [_, info]: resource_deps_) {
     std::vector<uint32_t> sorted_writes{info.write_passes.begin(), info.write_passes.end()};
     std::ranges::sort(sorted_writes);
     const auto write_count = static_cast<uint32_t>(sorted_writes.size());
@@ -340,7 +340,7 @@ void passgraph::Graph::execute(VkCommandBuffer cmd)
   // Reset supplied data
   // -------------------
   passes_.clear();
-  resource_infos_.clear();
+  resource_deps_.clear();
   end_image_states_.clear();
   end_buffer_states_.clear();
 }

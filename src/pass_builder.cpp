@@ -9,8 +9,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_color_attach
 {
   if (accessed_.contains(info.resource.id)) return *this;
   accessed_.insert(info.resource.id);
-  auto& res = graph_->resource_infos_[info.resource.id];
-  res.write_passes.insert(id_);
+  auto& res = graph_->resource_deps_[info.resource.id];
 
   ImageAccess& image = pass_->images.emplace_back(
       info.resource.id,
@@ -30,6 +29,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_color_attach
     image.access |= VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
   }
 
+  res.write_passes.insert(id_);
   return *this;
 }
 
@@ -37,8 +37,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_depth_attach
 {
   if (accessed_.contains(info.resource.id)) return *this;
   accessed_.insert(info.resource.id);
-  auto& res = graph_->resource_infos_[info.resource.id];
-  res.write_passes.insert(id_);
+  auto& res = graph_->resource_deps_[info.resource.id];
 
   ImageAccess& image = pass_->images.emplace_back(
       info.resource.id,
@@ -60,25 +59,26 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_depth_attach
     image.access |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
   }
 
+  res.write_passes.insert(id_);
   return *this;
 }
 
 passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_vertex_buffer_input(const ResourceAccess& resource)
 {
-  set_buffer_input(resource, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT);
+  set_buffer_read(resource, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT);
   return *this;
 }
 
 passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_index_buffer_input(const ResourceAccess& resource)
 {
-  set_buffer_input(resource, VK_ACCESS_2_INDEX_READ_BIT, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT);
+  set_buffer_read(resource, VK_ACCESS_2_INDEX_READ_BIT, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT);
   return *this;
 }
 
 passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_indirect_buffer_input(
     const ResourceAccess& resource)
 {
-  set_buffer_input(resource, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT);
+  set_buffer_read(resource, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT);
   return *this;
 }
 
@@ -89,17 +89,17 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_render_area(
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_texture_input(const TextureInfo& info)
+T& passgraph::PassBuilder<T>::set_texture_read(const ResourceAccess& resource, const VkPipelineStageFlags2 stages)
 {
-  if (accessed_.contains(info.resource.id)) return static_cast<T&>(*this);
-  accessed_.insert(info.resource.id);
-  auto& res = graph_->resource_infos_[info.resource.id];
+  if (accessed_.contains(resource.id)) return static_cast<T&>(*this);
+  accessed_.insert(resource.id);
+  auto& res = graph_->resource_deps_[resource.id];
   res.read_passes.insert(id_);
-  if (info.resource.pass) {
-    res.read_deps[id_] = *info.resource.pass;
+  if (resource.pass) {
+    res.read_deps[id_] = *resource.pass;
   }
 
-  ImageAccess& image = pass_->images.emplace_back(info.resource.id, std::nullopt, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, info.stage,
+  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, stages,
                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
   if (image.stage == VK_PIPELINE_STAGE_2_NONE) {
@@ -112,6 +112,75 @@ T& passgraph::PassBuilder<T>::set_texture_input(const TextureInfo& info)
 }
 
 template<typename T>
+T& passgraph::PassBuilder<T>::set_uniform_read(const ResourceAccess& resource, const VkPipelineStageFlags2 stages)
+{
+  set_buffer_read(resource, VK_ACCESS_2_UNIFORM_READ_BIT, stages);
+  return static_cast<T&>(*this);
+}
+
+template<typename T>
+T& passgraph::PassBuilder<T>::set_storage_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
+{
+  set_buffer_read(resource, VK_ACCESS_2_SHADER_STORAGE_READ_BIT, stages);
+  return static_cast<T&>(*this);
+}
+
+template<typename T>
+T& passgraph::PassBuilder<T>::set_storage_buffer_write(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
+{
+  if (accessed_.contains(resource.id)) return static_cast<T&>(*this);
+  accessed_.insert(resource.id);
+  auto& res = graph_->resource_deps_[resource.id];
+
+  BufferAccess& buffer = pass_->buffers.emplace_back(resource.id, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, stages);
+
+  if (buffer.stage == VK_PIPELINE_STAGE_2_NONE) {
+    if constexpr (std::is_same_v<T, GraphicsPassBuilder>) {
+      buffer.stage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    }
+  }
+
+  if (!res.write_passes.empty()) {
+    res.read_passes.insert(id_);
+    if (resource.pass) {
+      res.read_deps[id_] = *resource.pass;
+    }
+    buffer.access |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
+  }
+
+  res.write_passes.insert(id_);
+  return static_cast<T&>(*this);
+}
+
+template<typename T>
+T& passgraph::PassBuilder<T>::set_storage_image_write(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
+{
+  if (accessed_.contains(resource.id)) return static_cast<T&>(*this);
+  accessed_.insert(resource.id);
+  auto& res = graph_->resource_deps_[resource.id];
+
+  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, stages,
+                             VK_IMAGE_LAYOUT_GENERAL);
+
+  if (image.stage == VK_PIPELINE_STAGE_2_NONE) {
+    if constexpr (std::is_same_v<T, GraphicsPassBuilder>) {
+      image.stage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    }
+  }
+
+  if (!res.write_passes.empty()) {
+    res.read_passes.insert(id_);
+    if (resource.pass) {
+      res.read_deps[id_] = *resource.pass;
+    }
+    image.access |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
+  }
+
+  res.write_passes.insert(id_);
+  return static_cast<T&>(*this);
+}
+
+template<typename T>
 T& passgraph::PassBuilder<T>::set_execute(std::function<void(VkCommandBuffer)> func)
 {
   pass_->func = std::move(func);
@@ -119,18 +188,24 @@ T& passgraph::PassBuilder<T>::set_execute(std::function<void(VkCommandBuffer)> f
 }
 
 template<typename T>
-void passgraph::PassBuilder<T>::set_buffer_input(const ResourceAccess& resource, VkAccessFlags2 access,
-                                                 VkPipelineStageFlags2 stage)
+void passgraph::PassBuilder<T>::set_buffer_read(const ResourceAccess& resource, VkAccessFlags2 access,
+                                                 const VkPipelineStageFlags2 stages)
 {
   if (accessed_.contains(resource.id)) return;
   accessed_.insert(resource.id);
-  auto& res = graph_->resource_infos_[resource.id];
+  auto& res = graph_->resource_deps_[resource.id];
   res.read_passes.insert(id_);
   if (resource.pass) {
     res.read_deps[id_] = *resource.pass;
   }
 
-  pass_->buffers.emplace_back(resource.id, std::nullopt, access, stage);
+  BufferAccess& buffer = pass_->buffers.emplace_back(resource.id, access, stages);
+
+  if (buffer.stage == VK_PIPELINE_STAGE_2_NONE) {
+    if constexpr (std::is_same_v<T, GraphicsPassBuilder>) {
+      buffer.stage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    }
+  }
 }
 
 template class passgraph::PassBuilder<passgraph::GraphicsPassBuilder>;

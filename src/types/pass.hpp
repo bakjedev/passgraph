@@ -36,7 +36,6 @@ namespace passgraph {
 
   struct BufferAccess {
     ResourceID resource;
-    std::optional<uint32_t> pass;
 
     VkAccessFlags2 access = VK_ACCESS_2_NONE;
     VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_NONE;
