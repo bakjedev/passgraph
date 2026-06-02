@@ -20,6 +20,8 @@ namespace passgraph {
     VkFormat format;
     VkImageUsageFlags usage;
     VkImageAspectFlags aspect;
+    uint32_t layer_count;
+    uint32_t level_count;
 
     ImageState state;
   };
@@ -36,7 +38,8 @@ namespace passgraph {
       { img.format() } -> std::same_as<VkFormat>;
       { img.usage() } -> std::same_as<VkImageUsageFlags>;
       { img.aspect() } -> std::same_as<VkImageAspectFlags>;
+      { img.layer_count() } -> std::same_as<uint32_t>;
+      { img.level_count() } -> std::same_as<uint32_t>;
       { img.image() } -> std::same_as<VkImage>;
-      { img.view() } -> std::same_as<VkImageView>;
     };
 } // namespace passgraph

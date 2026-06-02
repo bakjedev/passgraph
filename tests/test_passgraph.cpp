@@ -3,7 +3,7 @@
 
 TEST(Passgraph, SimpleTest)
 {
-  passgraph::Context context;
+  passgraph::Context context{nullptr};
 
   const auto buf =
       context.import_buffer({.size = 0, .usage = 0u, .state = passgraph::BufferState::Undefined}, nullptr, "Data");
@@ -14,8 +14,10 @@ TEST(Passgraph, SimpleTest)
                                          .format = VK_FORMAT_R32G32B32A32_SFLOAT,
                                          .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                          .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                                         .layer_count = 1,
+                                         .level_count = 1,
                                          .state = passgraph::ImageState::Undefined},
-                                        nullptr, nullptr, "RenderTarget");
+                                        nullptr, "RenderTarget");
 
   EXPECT_TRUE(buf);
   EXPECT_TRUE(img);
@@ -31,7 +33,7 @@ TEST(Passgraph, SimpleTest)
     std::cout << "B" << "\n";
   });
 
-  graph.add_graphics_pass("Third").set_image_read( {img, first}).set_execute([](VkCommandBuffer) {
+  graph.add_graphics_pass("Third").set_image_read({{img, first}}).set_execute([](VkCommandBuffer) {
     std::cout << "C" << "\n";
   });
 

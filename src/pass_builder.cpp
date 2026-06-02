@@ -16,7 +16,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_color_attach
                  .store_op = static_cast<VkAttachmentStoreOp>(info.store_op),
                  .clear_value = info.clear_value,
                  .is_depth = false},
-      VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+      info.layer, info.level, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
   if (info.load_op == LoadOp::Load && !res.write_passes.empty()) {
@@ -43,7 +43,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_depth_attach
                  .store_op = static_cast<VkAttachmentStoreOp>(info.store_op),
                  .clear_value = info.clear_value,
                  .is_depth = true},
-      VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+      info.layer, info.level, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
       VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
@@ -61,16 +61,15 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_depth_attach
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_resolve_attachment(
-    const ResourceID resolve_resource, const ResourceID color_resource, const VkResolveModeFlags mode)
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_resolve_attachment(const ResolveInfo& info)
 {
-  if (!try_access(resolve_resource)) return *this;
-  auto& res = graph_->resource_deps_[resolve_resource];
+  if (!try_access(info.resource)) return *this;
+  auto& res = graph_->resource_deps_[info.resource];
   for (auto& image_access: pass_->images) {
-    if (image_access.resource == color_resource) {
+    if (image_access.resource == info.color) {
       if (image_access.attachment.has_value()) {
-        image_access.attachment->resolve = resolve_resource;
-        image_access.attachment->resolve_mode = mode;
+        image_access.attachment->resolve = info.resource;
+        image_access.attachment->resolve_mode = info.mode;
 
         res.write_passes.insert(id_);
 
@@ -81,22 +80,21 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_resolve_atta
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_vertex_buffer_input(const ResourceAccess& resource)
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_vertex_buffer_input(const BufferInfo& info)
 {
-  set_buffer_read(resource, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT);
+  set_buffer_read(info, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT);
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_index_buffer_input(const ResourceAccess& resource)
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_index_buffer_input(const BufferInfo& info)
 {
-  set_buffer_read(resource, VK_ACCESS_2_INDEX_READ_BIT, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT);
+  set_buffer_read(info, VK_ACCESS_2_INDEX_READ_BIT);
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_indirect_buffer_input(
-    const ResourceAccess& resource)
+passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_indirect_buffer_input(const BufferInfo& info)
 {
-  set_buffer_read(resource, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT);
+  set_buffer_read(info, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
   return *this;
 }
 
@@ -107,17 +105,18 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_render_area(
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_image_read(const ResourceAccess& resource, const VkPipelineStageFlags2 stages)
+T& passgraph::PassBuilder<T>::set_image_read(const ImageInfo& info)
 {
-  if (!try_access(resource.id)) return static_cast<T&>(*this);
-  auto& res = graph_->resource_deps_[resource.id];
+  if (!try_access(info.resource.id)) return static_cast<T&>(*this);
+  auto& res = graph_->resource_deps_[info.resource.id];
   res.read_passes.insert(id_);
-  if (resource.pass) {
-    res.read_deps[id_] = *resource.pass;
+  if (info.resource.pass) {
+    res.read_deps[id_] = *info.resource.pass;
   }
 
-  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-                                                  stages, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  ImageAccess& image = pass_->images.emplace_back(info.resource.id, std::nullopt, info.layer, info.level,
+                                                  VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, info.stages,
+                                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
   set_stages_fallback(image.stages);
 
@@ -125,48 +124,49 @@ T& passgraph::PassBuilder<T>::set_image_read(const ResourceAccess& resource, con
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_uniform_buffer_read(const ResourceAccess& resource,
-                                                      const VkPipelineStageFlags2 stages)
+T& passgraph::PassBuilder<T>::set_uniform_buffer_read(const BufferInfo& info)
 {
-  set_buffer_read(resource, VK_ACCESS_2_UNIFORM_READ_BIT, stages);
+  set_buffer_read(info, VK_ACCESS_2_UNIFORM_READ_BIT);
   return static_cast<T&>(*this);
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_storage_buffer_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
+T& passgraph::PassBuilder<T>::set_storage_buffer_read(const BufferInfo& info)
 {
-  set_buffer_read(resource, VK_ACCESS_2_SHADER_STORAGE_READ_BIT, stages);
+  set_buffer_read(info, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
   return static_cast<T&>(*this);
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_storage_buffer_write(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
+T& passgraph::PassBuilder<T>::set_storage_buffer_write(const BufferInfo& info)
 {
-  if (!try_access(resource.id)) return static_cast<T&>(*this);
-  auto& res = graph_->resource_deps_[resource.id];
+  if (!try_access(info.resource.id)) return static_cast<T&>(*this);
+  auto& res = graph_->resource_deps_[info.resource.id];
 
-  BufferAccess& buffer = pass_->buffers.emplace_back(resource.id, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, stages);
+  BufferAccess& buffer = pass_->buffers.emplace_back(info.resource.id, info.size, info.offset,
+                                                     VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, info.stages);
 
   set_stages_fallback(buffer.stages);
 
-  set_possible_read(resource, res, buffer.access, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+  set_possible_read(info.resource, res, buffer.access, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
 
   res.write_passes.insert(id_);
   return static_cast<T&>(*this);
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_storage_image_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
+T& passgraph::PassBuilder<T>::set_storage_image_read(const ImageInfo& info)
 {
-  if (!try_access(resource.id)) return static_cast<T&>(*this);
-  auto& res = graph_->resource_deps_[resource.id];
+  if (!try_access(info.resource.id)) return static_cast<T&>(*this);
+  auto& res = graph_->resource_deps_[info.resource.id];
   res.read_passes.insert(id_);
-  if (resource.pass) {
-    res.read_deps[id_] = *resource.pass;
+  if (info.resource.pass) {
+    res.read_deps[id_] = *info.resource.pass;
   }
 
-  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                                                  stages, VK_IMAGE_LAYOUT_GENERAL);
+  ImageAccess& image =
+      pass_->images.emplace_back(info.resource.id, std::nullopt, info.layer, info.level,
+                                 VK_ACCESS_2_SHADER_STORAGE_READ_BIT, info.stages, VK_IMAGE_LAYOUT_GENERAL);
 
   set_stages_fallback(image.stages);
 
@@ -174,17 +174,18 @@ T& passgraph::PassBuilder<T>::set_storage_image_read(const ResourceAccess& resou
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_storage_image_write(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
+T& passgraph::PassBuilder<T>::set_storage_image_write(const ImageInfo& info)
 {
-  if (!try_access(resource.id)) return static_cast<T&>(*this);
-  auto& res = graph_->resource_deps_[resource.id];
+  if (!try_access(info.resource.id)) return static_cast<T&>(*this);
+  auto& res = graph_->resource_deps_[info.resource.id];
 
-  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-                                                  stages, VK_IMAGE_LAYOUT_GENERAL);
+  ImageAccess& image =
+      pass_->images.emplace_back(info.resource.id, std::nullopt, info.layer, info.level,
+                                 VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, info.stages, VK_IMAGE_LAYOUT_GENERAL);
 
   set_stages_fallback(image.stages);
 
-  set_possible_read(resource, res, image.access, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
+  set_possible_read(info.resource, res, image.access, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
 
   res.write_passes.insert(id_);
   return static_cast<T&>(*this);
@@ -198,18 +199,17 @@ T& passgraph::PassBuilder<T>::set_execute(std::function<void(VkCommandBuffer)> f
 }
 
 template<typename T>
-void passgraph::PassBuilder<T>::set_buffer_read(const ResourceAccess& resource, VkAccessFlags2 access,
-                                                const VkPipelineStageFlags2 stages)
+void passgraph::PassBuilder<T>::set_buffer_read(const BufferInfo& info, const VkAccessFlags2 access)
 {
-  if (accessed_.contains(resource.id)) return;
-  accessed_.insert(resource.id);
-  auto& res = graph_->resource_deps_[resource.id];
+  if (accessed_.contains(info.resource.id)) return;
+  accessed_.insert(info.resource.id);
+  auto& res = graph_->resource_deps_[info.resource.id];
   res.read_passes.insert(id_);
-  if (resource.pass) {
-    res.read_deps[id_] = *resource.pass;
+  if (info.resource.pass) {
+    res.read_deps[id_] = *info.resource.pass;
   }
 
-  BufferAccess& buffer = pass_->buffers.emplace_back(resource.id, access, stages);
+  BufferAccess& buffer = pass_->buffers.emplace_back(info.resource.id, info.size, info.offset, access, info.stages);
 
   set_stages_fallback(buffer.stages);
 }

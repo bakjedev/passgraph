@@ -9,8 +9,10 @@
 namespace passgraph {
   class Context {
   public:
-    [[nodiscard]] ResourceID import_image(const ImageResource& image, VkImage raw, VkImageView view,
-                                          std::string name = "Unnamed image");
+    explicit Context(VkDevice device) : device_(device) {}
+    ~Context();
+
+    [[nodiscard]] ResourceID import_image(const ImageResource& image, VkImage raw, std::string name = "Unnamed image");
 
     template<ImageInterface I>
     [[nodiscard]] ResourceID import_image(const I& image, const ImageState& state, std::string name = "Unnamed image");
@@ -33,10 +35,36 @@ namespace passgraph {
     std::vector<BufferResource> buffers_;
 
     std::vector<VkImage> raw_images_;
-    std::vector<VkImageView> raw_image_views_;
     std::vector<VkBuffer> raw_buffers_;
 
+    VkDevice device_ = VK_NULL_HANDLE;
+
     Graph graph_{this};
+
+    template<class T>
+    static void hash_combine(size_t& seed, const T& value)
+    {
+      std::hash<T> hasher;
+      seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+
+    using ViewKey = std::tuple<VkImage, uint32_t, uint32_t, uint32_t, uint32_t, VkFormat>;
+    struct ViewKeyHasher {
+      size_t operator()(const ViewKey& key) const
+      {
+        size_t seed = 0;
+        hash_combine(seed, std::get<0>(key));
+        hash_combine(seed, std::get<1>(key));
+        hash_combine(seed, std::get<2>(key));
+        hash_combine(seed, std::get<3>(key));
+        hash_combine(seed, std::get<4>(key));
+        hash_combine(seed, std::get<5>(key));
+        return seed;
+      }
+    };
+    std::unordered_map<ViewKey, VkImageView, ViewKeyHasher> image_views_;
+
+    VkImageView get_image_view(const ImageAccess& image_access, const Resource& resource);
   };
 } // namespace passgraph
 

@@ -348,102 +348,106 @@ int main()
     VK_CHECK(vkCreateImageView(device, &depth_view_create_info, nullptr, &depth_image_view));
   };
 
-  passgraph::Context context;
+  {
+    passgraph::Context context{device};
 
-  std::vector<passgraph::ResourceID> swap_chain_imports{image_count};
-  for (uint32_t i = 0; i < image_count; i++) {
-    swap_chain_imports[i] = context.import_image(
-        {.x = window_width,
-         .y = window_height,
-         .z = 0,
-         .format = image_format,
-         .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-         .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
-         .state = {.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                   .stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                   .layout = VK_IMAGE_LAYOUT_UNDEFINED}},
-        swap_chain_images[i], swap_chain_image_views[i], "Swapchain image");
-  }
-
-  uint32_t frame_index = 0;
-  while (!glfwWindowShouldClose(window)) {
-    VK_CHECK(vkWaitForFences(device, 1, &fences[frame_index], true, UINT64_MAX));
-    VK_CHECK(vkResetFences(device, 1, &fences[frame_index]));
-
-    uint32_t image_index = 0;
-    VkResult result = vkAcquireNextImageKHR(device, swap_chain, UINT64_MAX, image_acquired_semaphores[frame_index],
-                                            VK_NULL_HANDLE, &image_index);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-      recreate_swap_chain();
-      continue;
+    std::vector<passgraph::ResourceID> swap_chain_imports{image_count};
+    for (uint32_t i = 0; i < image_count; i++) {
+      swap_chain_imports[i] = context.import_image(
+          {.x = window_width,
+           .y = window_height,
+           .z = 0,
+           .format = image_format,
+           .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+           .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+           .layer_count = 1,
+           .level_count = 1,
+           .state = {.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                     .stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                     .layout = VK_IMAGE_LAYOUT_UNDEFINED}},
+          swap_chain_images[i], "Swapchain image");
     }
 
-    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-      std::cout << "Failed to acquire swapchain image\n";
-      abort();
+    uint32_t frame_index = 0;
+    while (!glfwWindowShouldClose(window)) {
+      VK_CHECK(vkWaitForFences(device, 1, &fences[frame_index], true, UINT64_MAX));
+      VK_CHECK(vkResetFences(device, 1, &fences[frame_index]));
+
+      uint32_t image_index = 0;
+      VkResult result = vkAcquireNextImageKHR(device, swap_chain, UINT64_MAX, image_acquired_semaphores[frame_index],
+                                              VK_NULL_HANDLE, &image_index);
+
+      if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        recreate_swap_chain();
+        continue;
+      }
+
+      if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        std::cout << "Failed to acquire swapchain image\n";
+        abort();
+      }
+
+      auto cmd = command_buffers[frame_index];
+      VK_CHECK(vkResetCommandBuffer(cmd, 0));
+
+      VkCommandBufferBeginInfo cmd_begin_info{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                              .pNext = nullptr,
+                                              .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+                                              .pInheritanceInfo = nullptr};
+      VK_CHECK(vkBeginCommandBuffer(cmd, &cmd_begin_info));
+
+      passgraph::Graph& graph = context.graph();
+
+      graph.add_graphics_pass("RenderPass")
+          .set_color_attachment({.resource = {swap_chain_imports[image_index]}, .store_op = passgraph::StoreOp::Store})
+          .set_execute([]([[maybe_unused]] VkCommandBuffer cb) {
+            // whatever
+            std::cout << "whatever\n";
+          });
+
+      graph.set_image_end_state(
+          swap_chain_imports[image_index],
+          {.access = VK_ACCESS_2_NONE, .stage = VK_PIPELINE_STAGE_2_NONE, .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR});
+
+
+      graph.compile();
+
+      graph.execute(cmd);
+
+      vkEndCommandBuffer(cmd);
+
+      VkPipelineStageFlags wait_stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+      VkSubmitInfo submit_info{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+                               .pNext = nullptr,
+                               .waitSemaphoreCount = 1,
+                               .pWaitSemaphores = &image_acquired_semaphores[frame_index],
+                               .pWaitDstStageMask = &wait_stages,
+                               .commandBufferCount = 1,
+                               .pCommandBuffers = &cmd,
+                               .signalSemaphoreCount = 1,
+                               .pSignalSemaphores = &render_complete_semaphores[image_index]};
+      VK_CHECK(vkQueueSubmit(queue, 1, &submit_info, fences[frame_index]));
+
+      frame_index = (frame_index + 1) % max_frames_in_flight;
+
+      VkPresentInfoKHR present_info{.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+                                    .pNext = nullptr,
+                                    .waitSemaphoreCount = 1,
+                                    .pWaitSemaphores = &render_complete_semaphores[image_index],
+                                    .swapchainCount = 1,
+                                    .pSwapchains = &swap_chain,
+                                    .pImageIndices = &image_index,
+                                    .pResults = nullptr};
+      result = vkQueuePresentKHR(queue, &present_info);
+      if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        recreate_swap_chain();
+      } else if (result != VK_SUCCESS) {
+        std::cout << "Failed to present\n";
+        abort();
+      }
+
+      glfwPollEvents();
     }
-
-    auto cmd = command_buffers[frame_index];
-    VK_CHECK(vkResetCommandBuffer(cmd, 0));
-
-    VkCommandBufferBeginInfo cmd_begin_info{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-                                            .pNext = nullptr,
-                                            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-                                            .pInheritanceInfo = nullptr};
-    VK_CHECK(vkBeginCommandBuffer(cmd, &cmd_begin_info));
-
-    passgraph::Graph& graph = context.graph();
-
-    graph.add_graphics_pass("RenderPass")
-        .set_color_attachment({.resource = {swap_chain_imports[image_index]}, .store_op = passgraph::StoreOp::Store})
-        .set_execute([]([[maybe_unused]] VkCommandBuffer cb) {
-          // whatever
-          std::cout << "whatever\n";
-        });
-
-    graph.set_image_end_state(
-        swap_chain_imports[image_index],
-        {.access = VK_ACCESS_2_NONE, .stage = VK_PIPELINE_STAGE_2_NONE, .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR});
-
-
-    graph.compile();
-
-    graph.execute(cmd);
-
-    vkEndCommandBuffer(cmd);
-
-    VkPipelineStageFlags wait_stages = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    VkSubmitInfo submit_info{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-                             .pNext = nullptr,
-                             .waitSemaphoreCount = 1,
-                             .pWaitSemaphores = &image_acquired_semaphores[frame_index],
-                             .pWaitDstStageMask = &wait_stages,
-                             .commandBufferCount = 1,
-                             .pCommandBuffers = &cmd,
-                             .signalSemaphoreCount = 1,
-                             .pSignalSemaphores = &render_complete_semaphores[image_index]};
-    VK_CHECK(vkQueueSubmit(queue, 1, &submit_info, fences[frame_index]));
-
-    frame_index = (frame_index + 1) % max_frames_in_flight;
-
-    VkPresentInfoKHR present_info{.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-                                  .pNext = nullptr,
-                                  .waitSemaphoreCount = 1,
-                                  .pWaitSemaphores = &render_complete_semaphores[image_index],
-                                  .swapchainCount = 1,
-                                  .pSwapchains = &swap_chain,
-                                  .pImageIndices = &image_index,
-                                  .pResults = nullptr};
-    result = vkQueuePresentKHR(queue, &present_info);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-      recreate_swap_chain();
-    } else if (result != VK_SUCCESS) {
-      std::cout << "Failed to present\n";
-      abort();
-    }
-
-    glfwPollEvents();
   }
 
 

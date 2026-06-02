@@ -1,8 +1,18 @@
 #include "context.hpp"
-passgraph::ResourceID passgraph::Context::import_image(const ImageResource& image, VkImage raw, VkImageView view,
-                                                       std::string name)
+
+passgraph::Context::~Context()
 {
-  if (raw == VK_NULL_HANDLE || view == VK_NULL_HANDLE) {
+  if (!device_) return;
+  for (auto [_, view]: image_views_) {
+    if (view) {
+      vkDestroyImageView(device_, view, nullptr);
+    }
+  }
+}
+
+passgraph::ResourceID passgraph::Context::import_image(const ImageResource& image, VkImage raw, std::string name)
+{
+  if (raw == VK_NULL_HANDLE) {
     // return ResourceID{};
   }
 
@@ -11,7 +21,6 @@ passgraph::ResourceID passgraph::Context::import_image(const ImageResource& imag
 
   const auto raw_id = raw_images_.size();
   raw_images_.push_back(raw);
-  raw_image_views_.push_back(view);
 
   const auto id = resources_.size();
   resources_.emplace_back(ResourceType::Image, slot_id, raw_id, std::move(name));
@@ -35,4 +44,45 @@ passgraph::ResourceID passgraph::Context::import_buffer(const BufferResource& bu
   resources_.emplace_back(ResourceType::Buffer, slot_id, raw_id, std::move(name));
 
   return ResourceID{id};
+}
+
+VkImageView passgraph::Context::get_image_view(const ImageAccess& image_access, const Resource& resource)
+{
+  if (device_ == VK_NULL_HANDLE) return VK_NULL_HANDLE;
+  VkImage image_raw = raw_images_[resource.raw];
+  const ImageResource& image = images_[resource.slot];
+
+  const ViewKey key = {image_raw,          image_access.level, image.level_count,
+                       image_access.layer, image.layer_count,  image.format};
+
+  auto it = image_views_.find(key);
+  if (it != image_views_.end()) {
+    return it->second;
+  }
+
+  const VkImageViewCreateInfo view_create_info{
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0u,
+      .image = image_raw,
+      .viewType = VK_IMAGE_VIEW_TYPE_2D,
+      .format = image.format,
+      .components = {},
+      .subresourceRange =
+          {
+              .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+              .baseMipLevel = image_access.level,
+              .levelCount = image.level_count,
+              .baseArrayLayer = image_access.layer,
+              .layerCount = image.layer_count,
+          },
+  };
+
+  VkImageView& view = image_views_[key];
+  if (vkCreateImageView(device_, &view_create_info, nullptr, &view) != VK_SUCCESS) {
+    image_views_.erase(key);
+    return VK_NULL_HANDLE;
+  }
+
+  return view;
 }

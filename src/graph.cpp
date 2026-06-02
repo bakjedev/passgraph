@@ -192,10 +192,10 @@ bool passgraph::Graph::compile()
         barrier.newLayout = new_state.layout;
         barrier.image = context_->raw_images_.at(resource.raw);
         barrier.subresourceRange.aspectMask = image.aspect;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.layerCount = 1;
-        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = image_access.layer;
+        barrier.subresourceRange.baseMipLevel = image_access.level;
+        barrier.subresourceRange.layerCount = image.layer_count;
+        barrier.subresourceRange.levelCount = image.level_count;
         image.state = new_state;
       }
 
@@ -208,7 +208,7 @@ bool passgraph::Graph::compile()
         const auto& [load_op, store_op, clear_value, is_depth, resolve, resolve_mode] = *image_access.attachment;
         VkRenderingAttachmentInfo attachment_info{.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
                                                   .pNext = nullptr,
-                                                  .imageView = context_->raw_image_views_[resource.raw],
+                                                  .imageView = context_->get_image_view(image_access, resource),
                                                   .imageLayout = image.state.layout,
                                                   .resolveMode = VK_RESOLVE_MODE_NONE,
                                                   .resolveImageView = VK_NULL_HANDLE,
@@ -230,7 +230,7 @@ bool passgraph::Graph::compile()
 
         if (resolve) {
           const Resource& resolve_resource = context_->resources_.at(*resolve->id);
-          attachment_info.resolveImageView = context_->raw_image_views_[resolve_resource.raw];
+          attachment_info.resolveImageView = context_->get_image_view(image_access, resolve_resource);
           attachment_info.resolveMode = static_cast<VkResolveModeFlagBits>(resolve_mode);
           attachment_info.resolveImageLayout =
               is_depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -272,6 +272,8 @@ bool passgraph::Graph::compile()
         barrier.dstStageMask = new_state.stage;
         barrier.dstAccessMask = new_state.access;
         barrier.buffer = context_->raw_buffers_.at(resource.raw);
+        barrier.size = buffer_access.size;
+        barrier.offset = buffer_access.offset;
         buffer.state = new_state;
       }
     }

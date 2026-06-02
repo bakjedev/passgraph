@@ -30,6 +30,9 @@ namespace passgraph {
   struct ImageAccess {
     ResourceID resource;
     std::optional<Attachment> attachment = std::nullopt;
+    uint32_t layer = 0;
+    uint32_t level = 0;
+
 
     VkAccessFlags2 access = VK_ACCESS_2_NONE;
     VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
@@ -38,6 +41,8 @@ namespace passgraph {
 
   struct BufferAccess {
     ResourceID resource;
+    VkDeviceSize size = VK_WHOLE_SIZE;
+    VkDeviceSize offset = 0;
 
     VkAccessFlags2 access = VK_ACCESS_2_NONE;
     VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;

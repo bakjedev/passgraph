@@ -20,11 +20,11 @@ passgraph::ResourceID passgraph::Context::import_image(const I& image, const Ima
     y = size_y;
     z = size_z;
   }
-  images_.emplace_back(x, y, z, image.format(), image.usage(), image.aspect(), state);
+  images_.emplace_back(x, y, z, image.format(), image.usage(), image.aspect(), image.layer_count(), image.level_count(),
+                       state);
 
   const auto raw_id = raw_images_.size();
   raw_images_.push_back(image.image());
-  raw_image_views_.push_back(image.view());
 
   const auto id = resources_.size();
   resources_.emplace_back(ResourceType::Image, slot_id, raw_id, std::move(name));
