@@ -7,8 +7,7 @@
 
 passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_color_attachment(const AttachmentInfo& info)
 {
-  if (accessed_.contains(info.resource.id)) return *this;
-  accessed_.insert(info.resource.id);
+  if (!try_access(info.resource.id)) return *this;
   auto& res = graph_->resource_deps_[info.resource.id];
 
   ImageAccess& image = pass_->images.emplace_back(
@@ -35,8 +34,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_color_attach
 
 passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_depth_attachment(const AttachmentInfo& info)
 {
-  if (accessed_.contains(info.resource.id)) return *this;
-  accessed_.insert(info.resource.id);
+  if (!try_access(info.resource.id)) return *this;
   auto& res = graph_->resource_deps_[info.resource.id];
 
   ImageAccess& image = pass_->images.emplace_back(
@@ -91,8 +89,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_render_area(
 template<typename T>
 T& passgraph::PassBuilder<T>::set_image_read(const ResourceAccess& resource, const VkPipelineStageFlags2 stages)
 {
-  if (accessed_.contains(resource.id)) return static_cast<T&>(*this);
-  accessed_.insert(resource.id);
+  if (!try_access(resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[resource.id];
   res.read_passes.insert(id_);
   if (resource.pass) {
@@ -108,14 +105,15 @@ T& passgraph::PassBuilder<T>::set_image_read(const ResourceAccess& resource, con
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_uniform_read(const ResourceAccess& resource, const VkPipelineStageFlags2 stages)
+T& passgraph::PassBuilder<T>::set_uniform_buffer_read(const ResourceAccess& resource,
+                                                      const VkPipelineStageFlags2 stages)
 {
   set_buffer_read(resource, VK_ACCESS_2_UNIFORM_READ_BIT, stages);
   return static_cast<T&>(*this);
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_storage_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
+T& passgraph::PassBuilder<T>::set_storage_buffer_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
 {
   set_buffer_read(resource, VK_ACCESS_2_SHADER_STORAGE_READ_BIT, stages);
   return static_cast<T&>(*this);
@@ -124,8 +122,7 @@ T& passgraph::PassBuilder<T>::set_storage_read(const ResourceAccess& resource, V
 template<typename T>
 T& passgraph::PassBuilder<T>::set_storage_buffer_write(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
 {
-  if (accessed_.contains(resource.id)) return static_cast<T&>(*this);
-  accessed_.insert(resource.id);
+  if (!try_access(resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[resource.id];
 
   BufferAccess& buffer = pass_->buffers.emplace_back(resource.id, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, stages);
@@ -139,10 +136,27 @@ T& passgraph::PassBuilder<T>::set_storage_buffer_write(const ResourceAccess& res
 }
 
 template<typename T>
+T& passgraph::PassBuilder<T>::set_storage_image_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
+{
+  if (!try_access(resource.id)) return static_cast<T&>(*this);
+  auto& res = graph_->resource_deps_[resource.id];
+  res.read_passes.insert(id_);
+  if (resource.pass) {
+    res.read_deps[id_] = *resource.pass;
+  }
+
+  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                                                  stages, VK_IMAGE_LAYOUT_GENERAL);
+
+  set_stages_fallback(image.stages);
+
+  return static_cast<T&>(*this);
+}
+
+template<typename T>
 T& passgraph::PassBuilder<T>::set_storage_image_write(const ResourceAccess& resource, VkPipelineStageFlags2 stages)
 {
-  if (accessed_.contains(resource.id)) return static_cast<T&>(*this);
-  accessed_.insert(resource.id);
+  if (!try_access(resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[resource.id];
 
   ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
@@ -201,6 +215,14 @@ void passgraph::PassBuilder<T>::set_possible_read(const ResourceAccess& resource
     }
     access |= access_flags;
   }
+}
+
+template<typename T>
+bool passgraph::PassBuilder<T>::try_access(const ResourceID resource)
+{
+  if (accessed_.contains(resource)) return false;
+  accessed_.insert(resource);
+  return true;
 }
 
 template class passgraph::PassBuilder<passgraph::GraphicsPassBuilder>;

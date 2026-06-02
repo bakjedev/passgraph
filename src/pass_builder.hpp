@@ -31,10 +31,11 @@ namespace passgraph {
     }
 
     T& set_image_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
-    T& set_uniform_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
-    T& set_storage_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
+    T& set_uniform_buffer_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
+    T& set_storage_buffer_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
     T& set_storage_buffer_write(const ResourceAccess& resource,
                                 VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
+    T& set_storage_image_read(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
     T& set_storage_image_write(const ResourceAccess& resource, VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE);
 
     T& set_execute(std::function<void(VkCommandBuffer)> func);
@@ -50,6 +51,7 @@ namespace passgraph {
     void set_stages_fallback(VkPipelineStageFlags2& stages) const;
     void set_possible_read(const ResourceAccess& resource, ResourceDependencies& deps, VkAccessFlags2& access,
                            VkAccessFlags2 access_flags) const;
+    bool try_access(ResourceID resource);
   };
 
   class GraphicsPassBuilder : public PassBuilder<GraphicsPassBuilder> {
