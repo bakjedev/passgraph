@@ -7,6 +7,13 @@
 #include "types/resource.hpp"
 
 namespace passgraph {
+  template<class T>
+  static void hash_combine(size_t& seed, const T& value)
+  {
+    std::hash<T> hasher;
+    seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  }
+
   class Context {
   public:
     explicit Context(VkDevice device) : device_(device) {}
@@ -41,26 +48,9 @@ namespace passgraph {
 
     Graph graph_{this};
 
-    template<class T>
-    static void hash_combine(size_t& seed, const T& value)
-    {
-      std::hash<T> hasher;
-      seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    }
-
-    using ViewKey = std::tuple<VkImage, uint32_t, uint32_t, uint32_t, uint32_t, VkFormat>;
+    using ViewKey = std::tuple<VkImage, VkImageAspectFlags, uint32_t, uint32_t, uint32_t, uint32_t, VkFormat>;
     struct ViewKeyHasher {
-      size_t operator()(const ViewKey& key) const
-      {
-        size_t seed = 0;
-        hash_combine(seed, std::get<0>(key));
-        hash_combine(seed, std::get<1>(key));
-        hash_combine(seed, std::get<2>(key));
-        hash_combine(seed, std::get<3>(key));
-        hash_combine(seed, std::get<4>(key));
-        hash_combine(seed, std::get<5>(key));
-        return seed;
-      }
+      size_t operator()(const ViewKey& key) const;
     };
     std::unordered_map<ViewKey, VkImageView, ViewKeyHasher> image_views_;
 

@@ -46,14 +46,27 @@ passgraph::ResourceID passgraph::Context::import_buffer(const BufferResource& bu
   return ResourceID{id};
 }
 
+size_t passgraph::Context::ViewKeyHasher::operator()(const ViewKey& key) const
+{
+  size_t seed = 0;
+  hash_combine(seed, std::get<0>(key));
+  hash_combine(seed, std::get<1>(key));
+  hash_combine(seed, std::get<2>(key));
+  hash_combine(seed, std::get<3>(key));
+  hash_combine(seed, std::get<4>(key));
+  hash_combine(seed, std::get<5>(key));
+  hash_combine(seed, std::get<6>(key));
+  return seed;
+}
+
 VkImageView passgraph::Context::get_image_view(const ImageAccess& image_access, const Resource& resource)
 {
   if (device_ == VK_NULL_HANDLE) return VK_NULL_HANDLE;
   VkImage image_raw = raw_images_[resource.raw];
   const ImageResource& image = images_[resource.slot];
 
-  const ViewKey key = {image_raw,          image_access.level, image.level_count,
-                       image_access.layer, image.layer_count,  image.format};
+  const ViewKey key = {image_raw,          image.aspect,      image_access.level, image.level_count,
+                       image_access.layer, image.layer_count, image.format};
 
   auto it = image_views_.find(key);
   if (it != image_views_.end()) {
@@ -70,7 +83,7 @@ VkImageView passgraph::Context::get_image_view(const ImageAccess& image_access, 
       .components = {},
       .subresourceRange =
           {
-              .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+              .aspectMask = image.aspect,
               .baseMipLevel = image_access.level,
               .levelCount = image.level_count,
               .baseArrayLayer = image_access.layer,
