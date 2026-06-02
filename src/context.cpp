@@ -2,7 +2,7 @@
 passgraph::ResourceID passgraph::Context::import_image(const ImageResource& image, VkImage raw, VkImageView view,
                                                        std::string name)
 {
-  if (raw == VK_NULL_HANDLE) {
+  if (raw == VK_NULL_HANDLE || view == VK_NULL_HANDLE) {
     // return ResourceID{};
   }
 

@@ -33,6 +33,12 @@ namespace passgraph {
     {
     }
   };
+
+  struct ResourceDependencies {
+    std::unordered_set<uint32_t> write_passes;
+    std::unordered_set<uint32_t> read_passes;
+    std::unordered_map<uint32_t, uint32_t> read_deps;
+  };
 } // namespace passgraph
 
 template<>

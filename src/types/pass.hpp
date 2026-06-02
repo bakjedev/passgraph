@@ -30,7 +30,7 @@ namespace passgraph {
     std::optional<Attachment> attachment;
 
     VkAccessFlags2 access = VK_ACCESS_2_NONE;
-    VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_NONE;
+    VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
     VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
   };
 
@@ -38,7 +38,7 @@ namespace passgraph {
     ResourceID resource;
 
     VkAccessFlags2 access = VK_ACCESS_2_NONE;
-    VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_NONE;
+    VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
   };
 
 

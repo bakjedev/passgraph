@@ -89,7 +89,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_render_area(
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_texture_read(const ResourceAccess& resource, const VkPipelineStageFlags2 stages)
+T& passgraph::PassBuilder<T>::set_image_read(const ResourceAccess& resource, const VkPipelineStageFlags2 stages)
 {
   if (accessed_.contains(resource.id)) return static_cast<T&>(*this);
   accessed_.insert(resource.id);
@@ -99,14 +99,10 @@ T& passgraph::PassBuilder<T>::set_texture_read(const ResourceAccess& resource, c
     res.read_deps[id_] = *resource.pass;
   }
 
-  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, stages,
-                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+                                                  stages, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-  if (image.stage == VK_PIPELINE_STAGE_2_NONE) {
-    if constexpr (std::is_same_v<T, GraphicsPassBuilder>) {
-      image.stage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-    }
-  }
+  set_stages_fallback(image.stages);
 
   return static_cast<T&>(*this);
 }
@@ -134,19 +130,9 @@ T& passgraph::PassBuilder<T>::set_storage_buffer_write(const ResourceAccess& res
 
   BufferAccess& buffer = pass_->buffers.emplace_back(resource.id, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, stages);
 
-  if (buffer.stage == VK_PIPELINE_STAGE_2_NONE) {
-    if constexpr (std::is_same_v<T, GraphicsPassBuilder>) {
-      buffer.stage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-    }
-  }
+  set_stages_fallback(buffer.stages);
 
-  if (!res.write_passes.empty()) {
-    res.read_passes.insert(id_);
-    if (resource.pass) {
-      res.read_deps[id_] = *resource.pass;
-    }
-    buffer.access |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
-  }
+  set_possible_read(resource, res, buffer.access, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
 
   res.write_passes.insert(id_);
   return static_cast<T&>(*this);
@@ -159,22 +145,12 @@ T& passgraph::PassBuilder<T>::set_storage_image_write(const ResourceAccess& reso
   accessed_.insert(resource.id);
   auto& res = graph_->resource_deps_[resource.id];
 
-  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, stages,
-                             VK_IMAGE_LAYOUT_GENERAL);
+  ImageAccess& image = pass_->images.emplace_back(resource.id, std::nullopt, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                                                  stages, VK_IMAGE_LAYOUT_GENERAL);
 
-  if (image.stage == VK_PIPELINE_STAGE_2_NONE) {
-    if constexpr (std::is_same_v<T, GraphicsPassBuilder>) {
-      image.stage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-    }
-  }
+  set_stages_fallback(image.stages);
 
-  if (!res.write_passes.empty()) {
-    res.read_passes.insert(id_);
-    if (resource.pass) {
-      res.read_deps[id_] = *resource.pass;
-    }
-    image.access |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT;
-  }
+  set_possible_read(resource, res, image.access, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
 
   res.write_passes.insert(id_);
   return static_cast<T&>(*this);
@@ -189,7 +165,7 @@ T& passgraph::PassBuilder<T>::set_execute(std::function<void(VkCommandBuffer)> f
 
 template<typename T>
 void passgraph::PassBuilder<T>::set_buffer_read(const ResourceAccess& resource, VkAccessFlags2 access,
-                                                 const VkPipelineStageFlags2 stages)
+                                                const VkPipelineStageFlags2 stages)
 {
   if (accessed_.contains(resource.id)) return;
   accessed_.insert(resource.id);
@@ -201,10 +177,29 @@ void passgraph::PassBuilder<T>::set_buffer_read(const ResourceAccess& resource, 
 
   BufferAccess& buffer = pass_->buffers.emplace_back(resource.id, access, stages);
 
-  if (buffer.stage == VK_PIPELINE_STAGE_2_NONE) {
+  set_stages_fallback(buffer.stages);
+}
+
+template<typename T>
+void passgraph::PassBuilder<T>::set_stages_fallback(VkPipelineStageFlags2& stages) const
+{
+  if (stages == VK_PIPELINE_STAGE_2_NONE) {
     if constexpr (std::is_same_v<T, GraphicsPassBuilder>) {
-      buffer.stage = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+      stages = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     }
+  }
+}
+
+template<typename T>
+void passgraph::PassBuilder<T>::set_possible_read(const ResourceAccess& resource, ResourceDependencies& deps,
+                                                  VkAccessFlags2& access, const VkAccessFlags2 access_flags) const
+{
+  if (!deps.write_passes.empty()) {
+    deps.read_passes.insert(id_);
+    if (resource.pass) {
+      deps.read_deps[id_] = *resource.pass;
+    }
+    access |= access_flags;
   }
 }
 

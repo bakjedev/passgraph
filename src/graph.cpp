@@ -178,7 +178,7 @@ bool passgraph::Graph::compile()
     // image memory barriers
     for (const ImageAccess& image_access: pass.images) {
       const ImageState new_state{
-          .access = image_access.access, .stage = image_access.stage, .layout = image_access.layout};
+          .access = image_access.access, .stage = image_access.stages, .layout = image_access.layout};
       const Resource& resource = context_->resources_.at(*image_access.resource.id); // sorta unsafe
       ImageResource& image = context_->images_.at(resource.slot);
 
@@ -252,7 +252,7 @@ bool passgraph::Graph::compile()
 
     // buffer memory barriers
     for (const BufferAccess& buffer_access: pass.buffers) {
-      const BufferState new_state{.access = buffer_access.access, .stage = buffer_access.stage};
+      const BufferState new_state{.access = buffer_access.access, .stage = buffer_access.stages};
       const Resource& resource = context_->resources_.at(*buffer_access.resource.id); // sorta unsafe
       BufferResource& buffer = context_->buffers_.at(resource.slot);
 

@@ -51,12 +51,6 @@ namespace passgraph {
       std::function<void(VkCommandBuffer cmd)> func;
     };
 
-    struct ResourceDependencies {
-      std::unordered_set<uint32_t> write_passes;
-      std::unordered_set<uint32_t> read_passes;
-      std::unordered_map<uint32_t, uint32_t> read_deps;
-    };
-
     std::unordered_map<ResourceID, ResourceDependencies> resource_deps_;
 
     std::vector<Pass> passes_;
