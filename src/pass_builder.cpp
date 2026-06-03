@@ -5,7 +5,7 @@
 #include "graph.hpp"
 #include "types/pass.hpp"
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_color_attachment(const AttachmentInfo& info)
+fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_color_attachment(const AttachmentInfo& info)
 {
   if (!try_access(info.resource.id)) return *this;
   auto& res = graph_->resource_deps_[info.resource.id];
@@ -32,7 +32,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_color_attach
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_depth_attachment(const AttachmentInfo& info)
+fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_depth_attachment(const AttachmentInfo& info)
 {
   if (!try_access(info.resource.id)) return *this;
   auto& res = graph_->resource_deps_[info.resource.id];
@@ -61,7 +61,7 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_depth_attach
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_resolve_attachment(const ResolveInfo& info)
+fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_resolve_attachment(const ResolveInfo& info)
 {
   if (!try_access(info.resource)) return *this;
   auto& res = graph_->resource_deps_[info.resource];
@@ -80,32 +80,32 @@ passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_resolve_atta
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_vertex_buffer_input(const BufferInfo& info)
+fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_vertex_buffer_input(const BufferInfo& info)
 {
   set_buffer_read(info, VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT);
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_index_buffer_input(const BufferInfo& info)
+fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_index_buffer_input(const BufferInfo& info)
 {
   set_buffer_read(info, VK_ACCESS_2_INDEX_READ_BIT);
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_indirect_buffer_input(const BufferInfo& info)
+fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_indirect_buffer_input(const BufferInfo& info)
 {
   set_buffer_read(info, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
   return *this;
 }
 
-passgraph::GraphicsPassBuilder& passgraph::GraphicsPassBuilder::set_render_area(const RenderArea area)
+fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_render_area(const RenderArea area)
 {
   pass_->render_area = area;
   return *this;
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_image_read(const ImageInfo& info)
+T& fwrk::PassBuilder<T>::set_image_read(const ImageInfo& info)
 {
   if (!try_access(info.resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[info.resource.id];
@@ -124,21 +124,21 @@ T& passgraph::PassBuilder<T>::set_image_read(const ImageInfo& info)
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_uniform_buffer_read(const BufferInfo& info)
+T& fwrk::PassBuilder<T>::set_uniform_buffer_read(const BufferInfo& info)
 {
   set_buffer_read(info, VK_ACCESS_2_UNIFORM_READ_BIT);
   return static_cast<T&>(*this);
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_storage_buffer_read(const BufferInfo& info)
+T& fwrk::PassBuilder<T>::set_storage_buffer_read(const BufferInfo& info)
 {
   set_buffer_read(info, VK_ACCESS_2_SHADER_STORAGE_READ_BIT);
   return static_cast<T&>(*this);
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_storage_buffer_write(const BufferInfo& info)
+T& fwrk::PassBuilder<T>::set_storage_buffer_write(const BufferInfo& info)
 {
   if (!try_access(info.resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[info.resource.id];
@@ -155,7 +155,7 @@ T& passgraph::PassBuilder<T>::set_storage_buffer_write(const BufferInfo& info)
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_storage_image_read(const ImageInfo& info)
+T& fwrk::PassBuilder<T>::set_storage_image_read(const ImageInfo& info)
 {
   if (!try_access(info.resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[info.resource.id];
@@ -174,7 +174,7 @@ T& passgraph::PassBuilder<T>::set_storage_image_read(const ImageInfo& info)
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_storage_image_write(const ImageInfo& info)
+T& fwrk::PassBuilder<T>::set_storage_image_write(const ImageInfo& info)
 {
   if (!try_access(info.resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[info.resource.id];
@@ -192,14 +192,14 @@ T& passgraph::PassBuilder<T>::set_storage_image_write(const ImageInfo& info)
 }
 
 template<typename T>
-T& passgraph::PassBuilder<T>::set_execute(std::function<void(VkCommandBuffer)> func)
+T& fwrk::PassBuilder<T>::set_execute(std::function<void(VkCommandBuffer)> func)
 {
   pass_->func = std::move(func);
   return static_cast<T&>(*this);
 }
 
 template<typename T>
-void passgraph::PassBuilder<T>::set_buffer_read(const BufferInfo& info, const VkAccessFlags2 access)
+void fwrk::PassBuilder<T>::set_buffer_read(const BufferInfo& info, const VkAccessFlags2 access)
 {
   if (accessed_.contains(info.resource.id)) return;
   accessed_.insert(info.resource.id);
@@ -215,7 +215,7 @@ void passgraph::PassBuilder<T>::set_buffer_read(const BufferInfo& info, const Vk
 }
 
 template<typename T>
-void passgraph::PassBuilder<T>::set_stages_fallback(VkPipelineStageFlags2& stages) const
+void fwrk::PassBuilder<T>::set_stages_fallback(VkPipelineStageFlags2& stages) const
 {
   if (stages == VK_PIPELINE_STAGE_2_NONE) {
     if constexpr (std::is_same_v<T, GraphicsPassBuilder>) {
@@ -225,7 +225,7 @@ void passgraph::PassBuilder<T>::set_stages_fallback(VkPipelineStageFlags2& stage
 }
 
 template<typename T>
-void passgraph::PassBuilder<T>::set_possible_read(const ResourceAccess& resource, ResourceDependencies& deps,
+void fwrk::PassBuilder<T>::set_possible_read(const ResourceAccess& resource, ResourceDependencies& deps,
                                                   VkAccessFlags2& access, const VkAccessFlags2 access_flags) const
 {
   if (!deps.write_passes.empty()) {
@@ -238,11 +238,11 @@ void passgraph::PassBuilder<T>::set_possible_read(const ResourceAccess& resource
 }
 
 template<typename T>
-bool passgraph::PassBuilder<T>::try_access(const ResourceID resource)
+bool fwrk::PassBuilder<T>::try_access(const ResourceID resource)
 {
   if (accessed_.contains(resource)) return false;
   accessed_.insert(resource);
   return true;
 }
 
-template class passgraph::PassBuilder<passgraph::GraphicsPassBuilder>;
+template class fwrk::PassBuilder<fwrk::GraphicsPassBuilder>;

@@ -5,7 +5,7 @@
 #include <vulkan/vulkan.h>
 #include "resource.hpp"
 
-namespace passgraph {
+namespace fwrk {
   struct ClearValue {
     float r{};
     float g{};
@@ -56,4 +56,4 @@ namespace passgraph {
     std::vector<BufferAccess> buffers;
     std::optional<RenderArea> render_area;
   };
-} // namespace passgraph
+} // namespace fwrk

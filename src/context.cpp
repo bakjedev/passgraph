@@ -1,6 +1,6 @@
 #include "context.hpp"
 
-passgraph::Context::~Context()
+fwrk::Context::~Context()
 {
   if (!device_) return;
   for (auto [_, view]: image_views_) {
@@ -10,7 +10,7 @@ passgraph::Context::~Context()
   }
 }
 
-passgraph::ResourceID passgraph::Context::import_image(const ImageResource& image, VkImage raw, std::string name)
+fwrk::ResourceID fwrk::Context::import_image(const ImageResource& image, VkImage raw, std::string name)
 {
   if (raw == VK_NULL_HANDLE) {
     // return ResourceID{};
@@ -28,7 +28,7 @@ passgraph::ResourceID passgraph::Context::import_image(const ImageResource& imag
   return ResourceID{id};
 }
 
-passgraph::ResourceID passgraph::Context::import_buffer(const BufferResource& buffer, VkBuffer raw, std::string name)
+fwrk::ResourceID fwrk::Context::import_buffer(const BufferResource& buffer, VkBuffer raw, std::string name)
 {
   if (raw == VK_NULL_HANDLE) {
     // return ResourceID{};
@@ -46,7 +46,7 @@ passgraph::ResourceID passgraph::Context::import_buffer(const BufferResource& bu
   return ResourceID{id};
 }
 
-size_t passgraph::Context::ViewKeyHasher::operator()(const ViewKey& key) const
+size_t fwrk::Context::ViewKeyHasher::operator()(const ViewKey& key) const
 {
   size_t seed = 0;
   hash_combine(seed, std::get<0>(key));
@@ -59,7 +59,7 @@ size_t passgraph::Context::ViewKeyHasher::operator()(const ViewKey& key) const
   return seed;
 }
 
-VkImageView passgraph::Context::get_image_view(const ImageAccess& image_access, const Resource& resource)
+VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const Resource& resource)
 {
   if (device_ == VK_NULL_HANDLE) return VK_NULL_HANDLE;
   VkImage image_raw = raw_images_[resource.raw];

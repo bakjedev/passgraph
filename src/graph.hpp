@@ -10,7 +10,7 @@
 #include "types/pass.hpp"
 #include "types/resource.hpp"
 
-namespace passgraph {
+namespace fwrk {
   class Context;
 
   class Graph {
@@ -64,4 +64,4 @@ namespace passgraph {
 
     Context* context_;
   };
-} // namespace passgraph
+} // namespace fwrk

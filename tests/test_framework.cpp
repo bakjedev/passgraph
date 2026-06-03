@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 #include "context.hpp"
 
-TEST(Passgraph, SimpleTest)
+TEST(Framework, SimpleTest)
 {
-  passgraph::Context context{nullptr};
+  fwrk::Context context{nullptr};
 
   const auto buf =
-      context.import_buffer({.size = 0, .usage = 0u, .state = passgraph::BufferState::Undefined}, nullptr, "Data");
+      context.import_buffer({.size = 0, .usage = 0u, .state = fwrk::BufferState::Undefined}, nullptr, "Data");
 
   const auto img = context.import_image({.x = 1920,
                                          .y = 1080,
@@ -16,13 +16,13 @@ TEST(Passgraph, SimpleTest)
                                          .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
                                          .layer_count = 1,
                                          .level_count = 1,
-                                         .state = passgraph::ImageState::Undefined},
+                                         .state = fwrk::ImageState::Undefined},
                                         nullptr, "RenderTarget");
 
   EXPECT_TRUE(buf);
   EXPECT_TRUE(img);
 
-  passgraph::Graph& graph = context.graph();
+  fwrk::Graph& graph = context.graph();
 
   const uint32_t first = graph.add_graphics_pass("First")
                              .set_color_attachment({.resource = {img}})

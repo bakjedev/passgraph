@@ -349,9 +349,9 @@ int main()
   };
 
   {
-    passgraph::Context context{device};
+    fwrk::Context context{device};
 
-    std::vector<passgraph::ResourceID> swap_chain_imports{image_count};
+    std::vector<fwrk::ResourceID> swap_chain_imports{image_count};
     for (uint32_t i = 0; i < image_count; i++) {
       swap_chain_imports[i] = context.import_image(
           {.x = window_width,
@@ -396,10 +396,10 @@ int main()
                                               .pInheritanceInfo = nullptr};
       VK_CHECK(vkBeginCommandBuffer(cmd, &cmd_begin_info));
 
-      passgraph::Graph& graph = context.graph();
+      fwrk::Graph& graph = context.graph();
 
       graph.add_graphics_pass("RenderPass")
-          .set_color_attachment({.resource = {swap_chain_imports[image_index]}, .store_op = passgraph::StoreOp::Store})
+          .set_color_attachment({.resource = {swap_chain_imports[image_index]}, .store_op = fwrk::StoreOp::Store})
           .set_execute([]([[maybe_unused]] VkCommandBuffer cb) {
             // whatever
             std::cout << "whatever\n";

@@ -1,7 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
-namespace passgraph {
+namespace fwrk {
   struct ImageState {
     VkAccessFlags2 access;
     VkPipelineStageFlags2 stage;
@@ -42,4 +42,4 @@ namespace passgraph {
       { img.level_count() } -> std::same_as<uint32_t>;
       { img.image() } -> std::same_as<VkImage>;
     };
-} // namespace passgraph
+} // namespace fwrk

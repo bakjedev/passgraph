@@ -1,7 +1,7 @@
 #pragma once
 
-template<passgraph::ImageInterface I>
-passgraph::ResourceID passgraph::Context::import_image(const I& image, const ImageState& state, std::string name)
+template<fwrk::ImageInterface I>
+fwrk::ResourceID fwrk::Context::import_image(const I& image, const ImageState& state, std::string name)
 {
   const auto slot_id = images_.size();
 
@@ -32,8 +32,8 @@ passgraph::ResourceID passgraph::Context::import_image(const I& image, const Ima
   return ResourceID{id};
 }
 
-template<passgraph::BufferInterface I>
-passgraph::ResourceID passgraph::Context::import_buffer(const I& buffer, const BufferState& state, std::string name)
+template<fwrk::BufferInterface I>
+fwrk::ResourceID fwrk::Context::import_buffer(const I& buffer, const BufferState& state, std::string name)
 {
   const auto slot_id = buffers_.size();
   buffers_.emplace_back(buffer.size(), buffer.usage(), state);

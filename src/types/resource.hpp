@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_set>
 
-namespace passgraph {
+namespace fwrk {
   enum class ResourceType : uint8_t {
     Image,
     Buffer,
@@ -39,11 +39,11 @@ namespace passgraph {
     std::unordered_set<uint32_t> read_passes;
     std::unordered_map<uint32_t, uint32_t> read_deps;
   };
-} // namespace passgraph
+} // namespace fwrk
 
 template<>
-struct std::hash<passgraph::ResourceID> {
-  size_t operator()(const passgraph::ResourceID& resource) const noexcept
+struct std::hash<fwrk::ResourceID> {
+  size_t operator()(const fwrk::ResourceID& resource) const noexcept
   {
     return resource.id ? std::hash<uint32_t>{}(*resource.id) : 0;
   }

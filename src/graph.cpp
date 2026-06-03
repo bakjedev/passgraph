@@ -5,24 +5,24 @@
 #include "context.hpp"
 #include "types/pass.hpp"
 
-void passgraph::Graph::set_image_end_state(const ResourceID resource, const ImageState& state)
+void fwrk::Graph::set_image_end_state(const ResourceID resource, const ImageState& state)
 {
   end_image_states_[resource] = state;
 }
 
-void passgraph::Graph::set_buffer_end_state(const ResourceID resource, const BufferState& state)
+void fwrk::Graph::set_buffer_end_state(const ResourceID resource, const BufferState& state)
 {
   end_buffer_states_[resource] = state;
 }
 
-passgraph::GraphicsPassBuilder passgraph::Graph::add_graphics_pass(std::string name)
+fwrk::GraphicsPassBuilder fwrk::Graph::add_graphics_pass(std::string name)
 {
   const auto id = passes_.size();
   passes_.emplace_back().name = std::move(name);
   return GraphicsPassBuilder{&passes_.back(), this, id};
 }
 
-bool passgraph::Graph::compile()
+bool fwrk::Graph::compile()
 {
   // -------------------
   // Reset compiled data
@@ -334,7 +334,7 @@ bool passgraph::Graph::compile()
   return true;
 }
 
-void passgraph::Graph::execute(VkCommandBuffer cmd)
+void fwrk::Graph::execute(VkCommandBuffer cmd)
 {
   if (!cmd) return;
   for (const uint32_t pass_id: sorted_pass_ids_) {

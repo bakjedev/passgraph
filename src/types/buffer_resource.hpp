@@ -1,7 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
-namespace passgraph {
+namespace fwrk {
   struct BufferState {
     VkAccessFlags2 access;
     VkPipelineStageFlags2 stage;
@@ -25,4 +25,4 @@ namespace passgraph {
     { buf.usage() } -> std::same_as<VkBufferUsageFlags>;
     { buf.buffer() } -> std::same_as<VkBuffer>;
   };
-} // namespace passgraph
+} // namespace fwrk

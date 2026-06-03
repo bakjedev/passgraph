@@ -6,7 +6,7 @@
 #include "graph.hpp"
 #include "types/resource.hpp"
 
-namespace passgraph {
+namespace fwrk {
   template<class T>
   static void hash_combine(size_t& seed, const T& value)
   {
@@ -56,6 +56,6 @@ namespace passgraph {
 
     VkImageView get_image_view(const ImageAccess& image_access, const Resource& resource);
   };
-} // namespace passgraph
+} // namespace fwrk
 
 #include "context.tpp"

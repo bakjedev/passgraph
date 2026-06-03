@@ -3,11 +3,11 @@
 #include "types/pass.hpp"
 #include "types/resource.hpp"
 
-namespace passgraph {
+namespace fwrk {
   class Graph;
 
-  enum class LoadOp { Load = 0, Clear = 1, DontCare = 2 };
-  enum class StoreOp { Store = 0, DontCare = 1 };
+  enum class LoadOp : uint8_t { Load = 0, Clear = 1, DontCare = 2 };
+  enum class StoreOp : uint8_t { Store = 0, DontCare = 1 };
 
   struct ResourceAccess {
     ResourceID id;
@@ -88,4 +88,4 @@ namespace passgraph {
 
     GraphicsPassBuilder& set_render_area(RenderArea area);
   };
-} // namespace passgraph
+} // namespace fwrk

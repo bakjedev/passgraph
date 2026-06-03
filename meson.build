@@ -1,4 +1,4 @@
-project('passgraph', 'cpp', version : '1.0', meson_version : '>=1.1.0',
+project('framework', 'cpp', version : '1.0', meson_version : '>=1.1.0',
         default_options : [
             'cpp_std=c++20',
             'warning_level=3',
@@ -40,9 +40,9 @@ sources = files(
 
 vulkan_dep = dependency('vulkan')
 
-passgraph_lib = library('passgraph-lib', sources, include_directories : include_directories('src'), dependencies : [vulkan_dep])
-passgraph_dep = declare_dependency(
-    link_with : passgraph_lib,
+framework_lib = library('framework-lib', sources, include_directories : include_directories('src'), dependencies : [vulkan_dep])
+framework_dep = declare_dependency(
+    link_with : framework_lib,
     include_directories : include_directories('src'),
     dependencies : [vulkan_dep]
 )
@@ -50,7 +50,7 @@ passgraph_dep = declare_dependency(
 gtest_dep = dependency('gtest', main : true, required : false)
 
 if gtest_dep.found()
-    tests_exe = executable('passgraph-tests', 'tests/test_passgraph.cpp', dependencies : [gtest_dep, passgraph_dep])
+    tests_exe = executable('framework-tests', 'tests/test_framework.cpp', dependencies : [gtest_dep, framework_dep])
     test('unit', tests_exe, protocol : 'gtest')
 endif
 
