@@ -23,6 +23,13 @@ fwrk::GraphicsPassBuilder fwrk::Graph::add_graphics_pass(std::string name)
   return GraphicsPassBuilder{&passes_.back(), this, id};
 }
 
+fwrk::ComputePassBuilder fwrk::Graph::add_compute_pass(std::string name)
+{
+  const auto id = passes_.size();
+  passes_.emplace_back().name = std::move(name);
+  return ComputePassBuilder{&passes_.back(), this, id};
+}
+
 bool fwrk::Graph::compile()
 {
   // -------------------

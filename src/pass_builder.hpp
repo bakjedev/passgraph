@@ -89,4 +89,9 @@ namespace fwrk {
 
     GraphicsPassBuilder& set_render_area(RenderArea area);
   };
+
+  class ComputePassBuilder : public PassBuilder<ComputePassBuilder> {
+  public:
+    explicit ComputePassBuilder(Pass* pass, Graph* graph, const size_t id) : PassBuilder(pass, graph, id) {}
+  };
 } // namespace fwrk

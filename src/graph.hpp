@@ -18,7 +18,8 @@ namespace fwrk {
     void set_image_end_state(ResourceID resource, const ImageState& state);
     void set_buffer_end_state(ResourceID resource, const BufferState& state);
 
-    [[nodiscard]] GraphicsPassBuilder add_graphics_pass(std::string name = "Unnamed pass");
+    [[nodiscard]] GraphicsPassBuilder add_graphics_pass(std::string name = "Unnamed graphics pass");
+    [[nodiscard]] ComputePassBuilder add_compute_pass(std::string name = "Unnamed compute pass");
 
     bool compile();
 

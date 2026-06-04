@@ -210,6 +210,8 @@ void fwrk::PassBuilder<T>::set_stages_fallback(VkPipelineStageFlags2& stages) co
   if (stages == VK_PIPELINE_STAGE_2_NONE) {
     if constexpr (std::is_same_v<T, GraphicsPassBuilder>) {
       stages = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    } else if constexpr (std::is_same_v<T, ComputePassBuilder>) {
+      stages = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
     }
   }
 }
@@ -244,3 +246,4 @@ void fwrk::PassBuilder<T>::set_possible_explicit_read(const std::optional<uint32
 }
 
 template class fwrk::PassBuilder<fwrk::GraphicsPassBuilder>;
+template class fwrk::PassBuilder<fwrk::ComputePassBuilder>;
