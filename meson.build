@@ -38,7 +38,7 @@ sources = files(
     'src/pass_builder.cpp'
 )
 
-vulkan_dep = dependency('vulkan')
+vulkan_dep = dependency('vulkan', include_type: 'system')
 
 framework_lib = library('framework-lib', sources, include_directories : include_directories('src'), dependencies : [vulkan_dep])
 framework_dep = declare_dependency(
