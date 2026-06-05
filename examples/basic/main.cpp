@@ -199,32 +199,6 @@ int main()
   swap_chain_images.resize(image_count);
   VK_CHECK(vkGetSwapchainImagesKHR(device, swap_chain, &image_count, swap_chain_images.data()));
 
-  std::vector<VkImageView> swap_chain_image_views;
-  swap_chain_image_views.resize(image_count);
-
-  VkImageViewCreateInfo view_create_info{
-      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0u,
-      .image = VK_NULL_HANDLE,
-      .viewType = VK_IMAGE_VIEW_TYPE_2D,
-      .format = image_format,
-      .components = {},
-      .subresourceRange =
-          {
-              .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-              .baseMipLevel = 0,
-              .levelCount = 1,
-              .baseArrayLayer = 0,
-              .layerCount = 1,
-          },
-  };
-  for (uint32_t i = 0; i < image_count; i++) {
-    view_create_info.image = swap_chain_images[i];
-    VK_CHECK(vkCreateImageView(device, &view_create_info, nullptr, &swap_chain_image_views[i]));
-  }
-
-
   std::vector depth_formats{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
   VkFormat depth_format{VK_FORMAT_UNDEFINED};
   for (VkFormat& format: depth_formats) {
@@ -261,25 +235,6 @@ int main()
   VmaAllocation depth_image_allocation = VK_NULL_HANDLE;
   VK_CHECK(vmaCreateImage(allocator, &depth_image_create_info, &alloc_create_info, &depth_image,
                           &depth_image_allocation, nullptr));
-
-  VkImageViewCreateInfo depth_view_create_info{
-      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-      .pNext = nullptr,
-      .flags = 0u,
-      .image = depth_image,
-      .viewType = VK_IMAGE_VIEW_TYPE_2D,
-      .format = depth_format,
-      .components = {},
-      .subresourceRange{
-          .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-          .baseMipLevel = 0,
-          .levelCount = 1,
-          .baseArrayLayer = 0,
-          .layerCount = 1,
-      },
-  };
-  VkImageView depth_image_view = VK_NULL_HANDLE;
-  VK_CHECK(vkCreateImageView(device, &depth_view_create_info, nullptr, &depth_image_view));
 
   constexpr uint32_t max_frames_in_flight{2};
 
@@ -321,17 +276,9 @@ int main()
     vkDeviceWaitIdle(device);
     swap_chain_create_info.oldSwapchain = swap_chain;
     VK_CHECK(vkCreateSwapchainKHR(device, &swap_chain_create_info, nullptr, &swap_chain));
-    for (uint32_t i = 0; i < image_count; i++) {
-      vkDestroyImageView(device, swap_chain_image_views[i], nullptr);
-    }
     VK_CHECK(vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr));
     swap_chain_images.resize(image_count);
     VK_CHECK(vkGetSwapchainImagesKHR(device, swap_chain, &image_count, swap_chain_images.data()));
-    swap_chain_image_views.resize(image_count);
-    for (uint32_t i = 0; i < image_count; i++) {
-      view_create_info.image = swap_chain_images[i];
-      VK_CHECK(vkCreateImageView(device, &view_create_info, nullptr, &swap_chain_image_views[i]));
-    }
     for (const auto& semaphore: render_complete_semaphores) {
       vkDestroySemaphore(device, semaphore, nullptr);
     }
@@ -341,11 +288,9 @@ int main()
     }
     vkDestroySwapchainKHR(device, swap_chain_create_info.oldSwapchain, nullptr);
     vmaDestroyImage(allocator, depth_image, depth_image_allocation);
-    vkDestroyImageView(device, depth_image_view, nullptr);
 
     VK_CHECK(vmaCreateImage(allocator, &depth_image_create_info, &alloc_create_info, &depth_image,
                             &depth_image_allocation, nullptr));
-    VK_CHECK(vkCreateImageView(device, &depth_view_create_info, nullptr, &depth_image_view));
   };
 
   {
@@ -461,11 +406,7 @@ int main()
     vkDestroySemaphore(device, semaphore, nullptr);
   }
 
-  vkDestroyImageView(device, depth_image_view, nullptr);
   vmaDestroyImage(allocator, depth_image, depth_image_allocation);
-  for (uint32_t i = 0; i < image_count; i++) {
-    vkDestroyImageView(device, swap_chain_image_views[i], nullptr);
-  }
   vkDestroySwapchainKHR(device, swap_chain, nullptr);
   vmaDestroyAllocator(allocator);
   vkDestroyDevice(device, nullptr);
