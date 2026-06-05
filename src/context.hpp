@@ -5,6 +5,7 @@
 
 #include "graph.hpp"
 #include "types/resource.hpp"
+#include "util/lru_cache.hpp"
 
 namespace fwrk {
   template<class T>
@@ -16,7 +17,7 @@ namespace fwrk {
 
   class Context {
   public:
-    explicit Context(VkDevice device) : device_(device) {}
+    explicit Context(VkDevice device) : device_(device), image_views_cache(100) {}
     ~Context();
 
     [[nodiscard]] ResourceID import_image(const ImageResource& image, VkImage raw, std::string name = "Unnamed image");
@@ -52,7 +53,7 @@ namespace fwrk {
     struct ViewKeyHasher {
       size_t operator()(const ViewKey& key) const;
     };
-    std::unordered_map<ViewKey, VkImageView, ViewKeyHasher> image_views_;
+    LRUCache<ViewKey, VkImageView, ViewKeyHasher> image_views_cache;
 
     VkImageView get_image_view(const ImageAccess& image_access, const Resource& resource);
   };
