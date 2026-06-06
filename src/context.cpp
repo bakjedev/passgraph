@@ -3,7 +3,7 @@
 fwrk::Context::~Context()
 {
   if (!device_) return;
-  for (auto [_, view]: image_views_cache) {
+  for (auto [_, view]: image_views_cache_) {
     if (view) {
       vkDestroyImageView(device_, view, nullptr);
     }
@@ -68,11 +68,11 @@ VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const
   const ViewKey key = {image_raw,          image.aspect,      image_access.level, image.level_count,
                        image_access.layer, image.layer_count, image.format};
 
-  const auto optional_image_view = image_views_cache.get_copy(key);
-  if (optional_image_view.has_value()) {
-    return optional_image_view.value();
+  auto it = image_views_cache_.find(key);
+  if (it != image_views_cache_.end()) {
+    return it->second;
   }
-
+  
   const VkImageViewCreateInfo view_create_info{
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
       .pNext = nullptr,
@@ -91,11 +91,11 @@ VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const
           },
   };
 
-  VkImageView view;
+  VkImageView& view = image_views_cache_[key];
   if (vkCreateImageView(device_, &view_create_info, nullptr, &view) != VK_SUCCESS) {
+    image_views_cache_.erase(key);
     return VK_NULL_HANDLE;
   }
-  image_views_cache.put(key, view);
 
   return view;
 }
