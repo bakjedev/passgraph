@@ -15,9 +15,23 @@ namespace fwrk {
     seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
   }
 
+  using ViewKey = std::tuple<uint32_t, uint32_t, uint32_t, uint32_t>;
+
+  struct ViewKeyHasher {
+    size_t operator()(const ViewKey& key) const
+    {
+      size_t seed = 0;
+      hash_combine(seed, std::get<0>(key));
+      hash_combine(seed, std::get<1>(key));
+      hash_combine(seed, std::get<2>(key));
+      hash_combine(seed, std::get<3>(key));
+      return seed;
+    }
+  };
+
   class Context {
   public:
-    explicit Context(VkDevice device) : device_(device), image_views_cache_(100) {}
+    explicit Context(VkDevice device) : device_(device) {}
     ~Context();
 
     [[nodiscard]] ResourceID import_image(const ImageResource& image, VkImage raw, std::string name = "Unnamed image");
@@ -49,11 +63,7 @@ namespace fwrk {
 
     Graph graph_{this};
 
-    using ViewKey = std::tuple<VkImage, VkImageAspectFlags, uint32_t, uint32_t, uint32_t, uint32_t, VkFormat>;
-    struct ViewKeyHasher {
-      size_t operator()(const ViewKey& key) const;
-    };
-    flat_hash_map<ViewKey, VkImageView, ViewKeyHasher> image_views_cache_;
+    std::vector<flat_hash_map<ViewKey, VkImageView, ViewKeyHasher>> views_cache_{};
 
     VkImageView get_image_view(const ImageAccess& image_access, const Resource& resource);
   };

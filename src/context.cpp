@@ -3,9 +3,11 @@
 fwrk::Context::~Context()
 {
   if (!device_) return;
-  for (auto [_, view]: image_views_cache_) {
-    if (view) {
-      vkDestroyImageView(device_, view, nullptr);
+  for (auto& views: views_cache_) {
+    for (auto [_, view]: views) {
+      if (view) {
+        vkDestroyImageView(device_, view, nullptr);
+      }
     }
   }
 }
@@ -18,6 +20,7 @@ fwrk::ResourceID fwrk::Context::import_image(const ImageResource& image, VkImage
 
   const auto slot_id = images_.size();
   images_.push_back(image);
+  views_cache_.emplace_back();
 
   const auto raw_id = raw_images_.size();
   raw_images_.push_back(raw);
@@ -46,30 +49,17 @@ fwrk::ResourceID fwrk::Context::import_buffer(const BufferResource& buffer, VkBu
   return ResourceID{id};
 }
 
-size_t fwrk::Context::ViewKeyHasher::operator()(const ViewKey& key) const
-{
-  size_t seed = 0;
-  hash_combine(seed, std::get<0>(key));
-  hash_combine(seed, std::get<1>(key));
-  hash_combine(seed, std::get<2>(key));
-  hash_combine(seed, std::get<3>(key));
-  hash_combine(seed, std::get<4>(key));
-  hash_combine(seed, std::get<5>(key));
-  hash_combine(seed, std::get<6>(key));
-  return seed;
-}
-
 VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const Resource& resource)
 {
   if (device_ == VK_NULL_HANDLE) return VK_NULL_HANDLE;
   VkImage image_raw = raw_images_[resource.raw];
   const ImageResource& image = images_[resource.slot];
 
-  const ViewKey key = {image_raw,          image.aspect,      image_access.level, image.level_count,
-                       image_access.layer, image.layer_count, image.format};
+  auto& views = views_cache_[resource.slot];
 
-  auto it = image_views_cache_.find(key);
-  if (it != image_views_cache_.end()) {
+  const ViewKey key = {image_access.level, image.level_count, image_access.layer, image.layer_count};
+  auto it = views.find(key);
+  if (it != views.end()) {
     return it->second;
   }
 
@@ -95,7 +85,7 @@ VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const
   if (vkCreateImageView(device_, &view_create_info, nullptr, &view) != VK_SUCCESS) {
     return VK_NULL_HANDLE;
   }
-  image_views_cache_[key] = view;
+  views[key] = view;
 
   return view;
 }

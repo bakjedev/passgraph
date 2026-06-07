@@ -22,6 +22,7 @@ fwrk::ResourceID fwrk::Context::import_image(const I& image, const ImageState& s
   }
   images_.emplace_back(x, y, z, image.format(), image.usage(), image.aspect(), image.layer_count(), image.level_count(),
                        state);
+  views_cache_.emplace_back();
 
   const auto raw_id = raw_images_.size();
   raw_images_.push_back(image.image());
