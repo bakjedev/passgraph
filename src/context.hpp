@@ -36,15 +36,24 @@ namespace fwrk {
 
     [[nodiscard]] ResourceID import_image(const ImageResource& image, VkImage raw, std::string name = "Unnamed image");
 
-    template<ImageInterface I>
-    [[nodiscard]] ResourceID import_image(const I& image, const ImageState& state, std::string name = "Unnamed image");
-
     [[nodiscard]] ResourceID import_buffer(const BufferResource& buffer, VkBuffer raw,
                                            std::string name = "Unnamed buffer");
+
+    template<ImageInterface I>
+    [[nodiscard]] ResourceID import_image(const I& image, const ImageState& state, std::string name = "Unnamed image");
 
     template<BufferInterface I>
     [[nodiscard]] ResourceID import_buffer(const I& buffer, const BufferState& state,
                                            std::string name = "Unnamed buffer");
+
+    void update_image(ResourceID resource, const ImageResource& image, VkImage raw);
+    void update_buffer(ResourceID resource, const BufferResource& buffer, VkBuffer raw);
+
+    template<ImageInterface I>
+    void update_image(ResourceID resource, const I& image, const ImageState& state);
+
+    template<BufferInterface I>
+    void update_buffer(ResourceID resource, const I& buffer, const BufferState& state);
 
     [[nodiscard]] Graph& graph() { return graph_; }
 
@@ -66,6 +75,10 @@ namespace fwrk {
     std::vector<flat_hash_map<ViewKey, VkImageView, ViewKeyHasher>> views_cache_{};
 
     VkImageView get_image_view(const ImageAccess& image_access, const Resource& resource);
+    void destroy_views(uint32_t slot);
+
+    template<ImageInterface I>
+    ImageResource construct_image(const I& image, const ImageState& state) const;
   };
 } // namespace fwrk
 

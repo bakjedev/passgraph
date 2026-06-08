@@ -274,11 +274,15 @@ int main()
 
   auto recreate_swap_chain = [&] {
     vkDeviceWaitIdle(device);
+
     swap_chain_create_info.oldSwapchain = swap_chain;
     VK_CHECK(vkCreateSwapchainKHR(device, &swap_chain_create_info, nullptr, &swap_chain));
+    vkDestroySwapchainKHR(device, swap_chain_create_info.oldSwapchain, nullptr);
+
     VK_CHECK(vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr));
     swap_chain_images.resize(image_count);
     VK_CHECK(vkGetSwapchainImagesKHR(device, swap_chain, &image_count, swap_chain_images.data()));
+
     for (const auto& semaphore: render_complete_semaphores) {
       vkDestroySemaphore(device, semaphore, nullptr);
     }
@@ -286,9 +290,8 @@ int main()
     for (auto& semaphore: render_complete_semaphores) {
       VK_CHECK(vkCreateSemaphore(device, &semaphore_create_info, nullptr, &semaphore));
     }
-    vkDestroySwapchainKHR(device, swap_chain_create_info.oldSwapchain, nullptr);
-    vmaDestroyImage(allocator, depth_image, depth_image_allocation);
 
+    vmaDestroyImage(allocator, depth_image, depth_image_allocation);
     VK_CHECK(vmaCreateImage(allocator, &depth_image_create_info, &alloc_create_info, &depth_image,
                             &depth_image_allocation, nullptr));
   };

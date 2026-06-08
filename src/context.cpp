@@ -49,6 +49,27 @@ fwrk::ResourceID fwrk::Context::import_buffer(const BufferResource& buffer, VkBu
   return ResourceID{id};
 }
 
+void fwrk::Context::update_image(const ResourceID resource, const ImageResource& image, VkImage raw)
+{
+  if (!resource) return;
+  const Resource& res = resources_[*resource.id];
+  ImageResource& img = images_[res.slot];
+
+  destroy_views(res.slot);
+  img = image;
+  raw_images_[res.raw] = raw;
+}
+
+void fwrk::Context::update_buffer(const ResourceID resource, const BufferResource& buffer, VkBuffer raw)
+{
+  if (!resource) return;
+  const Resource& res = resources_[*resource.id];
+  BufferResource& buf = buffers_[res.slot];
+
+  buf = buffer;
+  raw_buffers_[res.raw] = raw;
+}
+
 VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const Resource& resource)
 {
   if (device_ == VK_NULL_HANDLE) return VK_NULL_HANDLE;
@@ -88,4 +109,18 @@ VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const
   views[key] = view;
 
   return view;
+}
+
+void fwrk::Context::destroy_views(const uint32_t slot)
+{
+  if (device_ == VK_NULL_HANDLE) return;
+
+  auto& views = views_cache_[slot];
+
+  for (auto [_, view]: views) {
+    if (view) {
+      vkDestroyImageView(device_, view, nullptr);
+    }
+  }
+  views.clear();
 }
