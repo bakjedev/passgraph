@@ -272,48 +272,64 @@ int main()
   };
   VK_CHECK(vkAllocateCommandBuffers(device, &command_buffer_alloc_create_info, command_buffers.data()));
 
-  auto recreate_swap_chain = [&] {
-    vkDeviceWaitIdle(device);
-
-    swap_chain_create_info.oldSwapchain = swap_chain;
-    VK_CHECK(vkCreateSwapchainKHR(device, &swap_chain_create_info, nullptr, &swap_chain));
-    vkDestroySwapchainKHR(device, swap_chain_create_info.oldSwapchain, nullptr);
-
-    VK_CHECK(vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr));
-    swap_chain_images.resize(image_count);
-    VK_CHECK(vkGetSwapchainImagesKHR(device, swap_chain, &image_count, swap_chain_images.data()));
-
-    for (const auto& semaphore: render_complete_semaphores) {
-      vkDestroySemaphore(device, semaphore, nullptr);
-    }
-    render_complete_semaphores.resize(image_count);
-    for (auto& semaphore: render_complete_semaphores) {
-      VK_CHECK(vkCreateSemaphore(device, &semaphore_create_info, nullptr, &semaphore));
-    }
-
-    vmaDestroyImage(allocator, depth_image, depth_image_allocation);
-    VK_CHECK(vmaCreateImage(allocator, &depth_image_create_info, &alloc_create_info, &depth_image,
-                            &depth_image_allocation, nullptr));
-  };
-
   {
     fwrk::Context context{device};
-
     std::vector<fwrk::ResourceID> swap_chain_imports{image_count};
+
+    auto recreate_swap_chain = [&] {
+      vkDeviceWaitIdle(device);
+
+      swap_chain_create_info.oldSwapchain = swap_chain;
+      VK_CHECK(vkCreateSwapchainKHR(device, &swap_chain_create_info, nullptr, &swap_chain));
+      vkDestroySwapchainKHR(device, swap_chain_create_info.oldSwapchain, nullptr);
+
+      VK_CHECK(vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr));
+      swap_chain_images.resize(image_count);
+      VK_CHECK(vkGetSwapchainImagesKHR(device, swap_chain, &image_count, swap_chain_images.data()));
+
+      swap_chain_imports.resize(image_count);
+      for (uint32_t i = 0; i < image_count; i++) {
+        fwrk::ResourceID& res = swap_chain_imports[i];
+        constexpr fwrk::ImageResource image{.x = window_width,
+                                            .y = window_height,
+                                            .z = 1,
+                                            .format = image_format,
+                                            .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                            .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                                            .layer_count = 1,
+                                            .level_count = 1,
+                                            .state = fwrk::ImageState::Undefined};
+        if (res) {
+          context.update_image(res, image, swap_chain_images[i]);
+        } else {
+          res = context.import_image(image, swap_chain_images[i]);
+        }
+      }
+
+      for (const auto& semaphore: render_complete_semaphores) {
+        vkDestroySemaphore(device, semaphore, nullptr);
+      }
+      render_complete_semaphores.resize(image_count);
+      for (auto& semaphore: render_complete_semaphores) {
+        VK_CHECK(vkCreateSemaphore(device, &semaphore_create_info, nullptr, &semaphore));
+      }
+
+      vmaDestroyImage(allocator, depth_image, depth_image_allocation);
+      VK_CHECK(vmaCreateImage(allocator, &depth_image_create_info, &alloc_create_info, &depth_image,
+                              &depth_image_allocation, nullptr));
+    };
+
     for (uint32_t i = 0; i < image_count; i++) {
-      swap_chain_imports[i] = context.import_image(
-          {.x = window_width,
-           .y = window_height,
-           .z = 1,
-           .format = image_format,
-           .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-           .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
-           .layer_count = 1,
-           .level_count = 1,
-           .state = {.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                     .stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                     .layout = VK_IMAGE_LAYOUT_UNDEFINED}},
-          swap_chain_images[i], "Swapchain image");
+      swap_chain_imports[i] = context.import_image({.x = window_width,
+                                                    .y = window_height,
+                                                    .z = 1,
+                                                    .format = image_format,
+                                                    .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                                    .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                    .layer_count = 1,
+                                                    .level_count = 1,
+                                                    .state = fwrk::ImageState::Undefined},
+                                                   swap_chain_images[i], "Swapchain image");
     }
 
     uint32_t frame_index = 0;
