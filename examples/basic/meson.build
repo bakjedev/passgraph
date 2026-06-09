@@ -26,4 +26,6 @@ basic_warnings = compiler.get_supported_arguments(
     '-Wno-missing-field-initializers'
 )
 
-executable('basic', sources, compiled_shaders, cpp_args : basic_warnings, dependencies : [framework_dep, glfw_dep, vma_dep])
+common_inc = include_directories('..' / 'common')
+
+executable('basic', sources, compiled_shaders, cpp_args : basic_warnings, include_directories : common_inc, dependencies : [framework_dep, glfw_dep, vma_dep])
