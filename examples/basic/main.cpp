@@ -113,8 +113,10 @@ int main()
                                  .load_op = fwrk::LoadOp::Clear,
                                  .store_op = fwrk::StoreOp::Store,
                                  .clear_value = {1.0F, 1.0F, 1.0F, 1.0F}})
-          .set_depth_attachment(
-              {.resource = {depth_import}, .load_op = fwrk::LoadOp::Clear, .store_op = fwrk::StoreOp::Store})
+          .set_depth_attachment({.resource = {depth_import},
+                                 .load_op = fwrk::LoadOp::Clear,
+                                 .store_op = fwrk::StoreOp::Store,
+                                 .clear_value = {1.0f, 1.0f, 1.0f, 1.0f}})
           .set_execute([&](VkCommandBuffer cb) {
             const VkViewport viewport{.width = static_cast<float>(swapchain.extent.width),
                                       .height = static_cast<float>(swapchain.extent.height),
@@ -128,6 +130,26 @@ int main()
             vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
             vkCmdDraw(cb, 3, 1, 0, 0);
+          });
+
+      graph.add_graphics_pass("RenderPass")
+          .set_color_attachment(
+              {.resource = {swapchain_alias}, .load_op = fwrk::LoadOp::Load, .store_op = fwrk::StoreOp::Store})
+          .set_depth_attachment(
+              {.resource = {depth_import}, .load_op = fwrk::LoadOp::Load, .store_op = fwrk::StoreOp::Store})
+          .set_execute([&](VkCommandBuffer cb) {
+            const VkViewport viewport{.width = static_cast<float>(swapchain.extent.width),
+                                      .height = static_cast<float>(swapchain.extent.height),
+                                      .minDepth = 0.0f,
+                                      .maxDepth = 1.0f};
+            vkCmdSetViewport(cb, 0, 1, &viewport);
+
+            const VkRect2D scissor{.extent = swapchain.extent};
+            vkCmdSetScissor(cb, 0, 1, &scissor);
+
+            vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+            vkCmdDraw(cb, 3, 1, 3, 0);
           });
 
       graph.set_image_end_state(
