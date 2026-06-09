@@ -25,7 +25,7 @@ namespace fwrk {
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
   };
 
-  struct ImageReadInfo {
+  struct ImageInfo {
     ResourceAccess resource;
     VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
     uint32_t base_level = 0;
@@ -35,7 +35,7 @@ namespace fwrk {
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
   };
 
-  struct ImageInfo {
+  struct StorageImageInfo {
     ResourceAccess resource;
     VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
     uint32_t base_level = 0;
@@ -65,12 +65,12 @@ namespace fwrk {
     {
     }
 
-    T& set_image_read(const ImageReadInfo& info);
+    T& set_image_read(const ImageInfo& info);
     T& set_uniform_buffer_read(const BufferInfo& info);
     T& set_storage_buffer_read(const BufferInfo& info);
     T& set_storage_buffer_write(const BufferInfo& info);
-    T& set_storage_image_read(const ImageInfo& info);
-    T& set_storage_image_write(const ImageInfo& info);
+    T& set_storage_image_read(const StorageImageInfo& info);
+    T& set_storage_image_write(const StorageImageInfo& info);
 
     T& set_execute(std::function<void(VkCommandBuffer)> func);
     [[nodiscard]] uint32_t id() const { return id_; }

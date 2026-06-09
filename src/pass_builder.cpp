@@ -108,7 +108,7 @@ fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_render_view(const uint
 }
 
 template<typename T>
-T& fwrk::PassBuilder<T>::set_image_read(const ImageReadInfo& info)
+T& fwrk::PassBuilder<T>::set_image_read(const ImageInfo& info)
 {
   if (!try_access(info.resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[info.resource.id];
@@ -156,7 +156,7 @@ T& fwrk::PassBuilder<T>::set_storage_buffer_write(const BufferInfo& info)
 }
 
 template<typename T>
-T& fwrk::PassBuilder<T>::set_storage_image_read(const ImageInfo& info)
+T& fwrk::PassBuilder<T>::set_storage_image_read(const StorageImageInfo& info)
 {
   if (!try_access(info.resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[info.resource.id];
@@ -173,7 +173,7 @@ T& fwrk::PassBuilder<T>::set_storage_image_read(const ImageInfo& info)
 }
 
 template<typename T>
-T& fwrk::PassBuilder<T>::set_storage_image_write(const ImageInfo& info)
+T& fwrk::PassBuilder<T>::set_storage_image_write(const StorageImageInfo& info)
 {
   if (!try_access(info.resource.id)) return static_cast<T&>(*this);
   auto& res = graph_->resource_deps_[info.resource.id];
