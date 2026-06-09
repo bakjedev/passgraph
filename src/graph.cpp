@@ -179,7 +179,7 @@ bool fwrk::Graph::compile()
     name = std::move(pass.name);
     func = std::move(pass.func);
 
-    uint32_t max_width = 0, max_height = 0;
+    VkExtent2D render_area{UINT32_MAX, UINT32_MAX};
 
     // image memory barriers
     for (const ImageAccess& image_access: pass.images) {
@@ -198,10 +198,10 @@ bool fwrk::Graph::compile()
         barrier.newLayout = new_state.layout;
         barrier.image = context_->raw_images_.at(resource.raw);
         barrier.subresourceRange.aspectMask = image.aspect;
-        barrier.subresourceRange.baseArrayLayer = image_access.layer;
-        barrier.subresourceRange.baseMipLevel = image_access.level;
-        barrier.subresourceRange.layerCount = image.layer_count;
-        barrier.subresourceRange.levelCount = image.level_count;
+        barrier.subresourceRange.baseArrayLayer = image_access.base_layer;
+        barrier.subresourceRange.baseMipLevel = image_access.base_level;
+        barrier.subresourceRange.layerCount = image_access.layer_count;
+        barrier.subresourceRange.levelCount = image_access.level_count;
         image.state = new_state;
       }
 
@@ -242,8 +242,8 @@ bool fwrk::Graph::compile()
               is_depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         }
 
-        max_width = std::max(max_width, image.x);
-        max_height = std::max(max_height, image.y);
+        render_area.width = std::min(render_area.width, std::max(1u, image.size.width >> image_access.base_level));
+        render_area.height = std::min(render_area.height, std::max(1u, image.size.height >> image_access.base_level));
       }
     }
     dep_info.imageMemoryBarrierCount = static_cast<uint32_t>(image_barriers.size());
@@ -253,10 +253,11 @@ bool fwrk::Graph::compile()
     if (rendering) {
       auto& [rendering_info, attachment_infos, depth_info] = *rendering;
       rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-      rendering_info.layerCount = 1;
-      rendering_info.renderArea.extent = pass.render_area
-                                             ? VkExtent2D{pass.render_area->width, pass.render_area->height}
-                                             : VkExtent2D{max_width, max_height};
+      rendering_info.layerCount = pass.render_info.layer_count;
+      rendering_info.viewMask = pass.render_info.view_mask;
+      rendering_info.renderArea.extent = pass.render_info.render_area ? VkExtent2D{pass.render_info.render_area->width,
+                                                                                   pass.render_info.render_area->height}
+                                                                      : render_area;
       rendering_info.colorAttachmentCount = static_cast<uint32_t>(attachment_infos.size());
       rendering_info.pColorAttachments = attachment_infos.data();
       if (depth_info) {

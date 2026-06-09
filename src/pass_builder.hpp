@@ -20,15 +20,28 @@ namespace fwrk {
     LoadOp load_op = LoadOp::DontCare;
     StoreOp store_op = StoreOp::DontCare;
     ClearValue clear_value{};
-    uint32_t layer = 0;
-    uint32_t level = 0;
+    uint32_t base_level = 0;
+    uint32_t base_layer = 0;
+    VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
+  };
+
+  struct ImageReadInfo {
+    ResourceAccess resource;
+    VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
+    uint32_t base_level = 0;
+    uint32_t level_count = VK_REMAINING_MIP_LEVELS;
+    uint32_t base_layer = 0;
+    uint32_t layer_count = VK_REMAINING_ARRAY_LAYERS;
+    VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
   };
 
   struct ImageInfo {
     ResourceAccess resource;
     VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
-    uint32_t layer = 0;
-    uint32_t level = 0;
+    uint32_t base_level = 0;
+    uint32_t base_layer = 0;
+    uint32_t layer_count = 1;
+    VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
   };
 
   struct BufferInfo {
@@ -52,7 +65,7 @@ namespace fwrk {
     {
     }
 
-    T& set_image_read(const ImageInfo& info);
+    T& set_image_read(const ImageReadInfo& info);
     T& set_uniform_buffer_read(const BufferInfo& info);
     T& set_storage_buffer_read(const BufferInfo& info);
     T& set_storage_buffer_write(const BufferInfo& info);
@@ -89,6 +102,7 @@ namespace fwrk {
     GraphicsPassBuilder& set_indirect_buffer_input(const BufferInfo& info);
 
     GraphicsPassBuilder& set_render_area(VkExtent2D area);
+    GraphicsPassBuilder& set_render_view(uint32_t layer_count, uint32_t view_mask = 0);
   };
 
   class ComputePassBuilder : public PassBuilder<ComputePassBuilder> {

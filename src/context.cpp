@@ -78,7 +78,8 @@ VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const
 
   auto& views = views_cache_[resource.slot];
 
-  const ViewKey key = {image_access.level, image.level_count, image_access.layer, image.layer_count};
+  const ViewKey key = {image_access.base_level, image_access.level_count, image_access.base_layer,
+                       image_access.layer_count, image_access.view_type};
   auto it = views.find(key);
   if (it != views.end()) {
     return it->second;
@@ -89,16 +90,16 @@ VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const
       .pNext = nullptr,
       .flags = 0u,
       .image = image_raw,
-      .viewType = VK_IMAGE_VIEW_TYPE_2D,
+      .viewType = image_access.view_type,
       .format = image.format,
       .components = {},
       .subresourceRange =
           {
               .aspectMask = image.aspect,
-              .baseMipLevel = image_access.level,
-              .levelCount = image.level_count,
-              .baseArrayLayer = image_access.layer,
-              .layerCount = image.layer_count,
+              .baseMipLevel = image_access.base_level,
+              .levelCount = image_access.level_count,
+              .baseArrayLayer = image_access.base_layer,
+              .layerCount = image_access.layer_count,
           },
   };
 

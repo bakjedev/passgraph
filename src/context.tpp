@@ -56,30 +56,12 @@ void fwrk::Context::update_buffer(const ResourceID resource, const I& buffer, co
 }
 
 template<fwrk::ImageInterface I>
-fwrk::ImageResource fwrk::Context::construct_image(const I& image, const ImageState& state) const
+fwrk::ImageResource fwrk::Context::construct_image(const I& image, const ImageState& state)
 {
-  uint32_t x = 0, y = 0, z = 0;
-  if constexpr (requires {
-                  image.x();
-                  image.y();
-                  image.z();
-                }) {
-    x = image.x();
-    y = image.y();
-    z = image.z();
-  } else {
-    const auto [size_x, size_y, size_z] = image.size();
-    x = size_x;
-    y = size_y;
-    z = size_z;
-  }
-  return ImageResource{.x = x,
-                       .y = y,
-                       .z = z,
+  return ImageResource{.type = image.type(),
+                       .size = image.size(),
                        .format = image.format(),
                        .usage = image.usage(),
                        .aspect = image.aspect(),
-                       .layer_count = image.layer_count(),
-                       .level_count = image.level_count(),
                        .state = state};
 }

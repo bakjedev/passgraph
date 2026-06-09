@@ -15,7 +15,7 @@ namespace fwrk {
     seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
   }
 
-  using ViewKey = std::tuple<uint32_t, uint32_t, uint32_t, uint32_t>;
+  using ViewKey = std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, VkImageViewType>;
 
   struct ViewKeyHasher {
     size_t operator()(const ViewKey& key) const
@@ -25,6 +25,7 @@ namespace fwrk {
       hash_combine(seed, std::get<1>(key));
       hash_combine(seed, std::get<2>(key));
       hash_combine(seed, std::get<3>(key));
+      hash_combine(seed, std::get<4>(key));
       return seed;
     }
   };
@@ -78,7 +79,7 @@ namespace fwrk {
     void destroy_views(uint32_t slot);
 
     template<ImageInterface I>
-    ImageResource construct_image(const I& image, const ImageState& state) const;
+    static ImageResource construct_image(const I& image, const ImageState& state);
   };
 } // namespace fwrk
 

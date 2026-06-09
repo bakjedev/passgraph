@@ -32,16 +32,12 @@ int main()
     fwrk::ResourceID depth_import{};
 
     auto import_resources = [&] {
-      const fwrk::ImageResource color_img_desc{.x = swapchain.extent.width,
-                                               .y = swapchain.extent.height,
-                                               .z = 1,
+      const fwrk::ImageResource color_img_desc{.type = VK_IMAGE_TYPE_2D,
+                                               .size = {swapchain.extent.width, swapchain.extent.height, 1},
                                                .format = swapchain.format,
                                                .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                                .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
-                                               .layer_count = 1,
-                                               .level_count = 1,
                                                .state = fwrk::ImageState::Undefined};
-
       swapchain_imports.resize(swapchain.images.size());
       for (uint32_t i = 0; i < swapchain.images.size(); i++) {
         fwrk::ResourceID& res = swapchain_imports[i];
@@ -51,14 +47,11 @@ int main()
           res = context.import_image(color_img_desc, swapchain.images[i], "Swapchain image");
       }
 
-      const fwrk::ImageResource depth_img_desc{.x = depth.extent.width,
-                                               .y = depth.extent.height,
-                                               .z = 1,
+      const fwrk::ImageResource depth_img_desc{.type = VK_IMAGE_TYPE_2D,
+                                               .size = {depth.extent.width, depth.extent.height, 1},
                                                .format = depth.format,
                                                .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                                .aspect = VK_IMAGE_ASPECT_DEPTH_BIT,
-                                               .layer_count = 1,
-                                               .level_count = 1,
                                                .state = fwrk::ImageState::Undefined};
       if (depth_import)
         context.update_image(depth_import, depth_img_desc, depth.image);

@@ -25,9 +25,11 @@ namespace fwrk {
   struct ImageAccess {
     ResourceID resource;
     std::optional<Attachment> attachment = std::nullopt;
-    uint32_t layer = 0;
-    uint32_t level = 0;
-
+    uint32_t base_level = 0;
+    uint32_t level_count = 0;
+    uint32_t base_layer = 0;
+    uint32_t layer_count = 0;
+    VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
 
     VkAccessFlags2 access = VK_ACCESS_2_NONE;
     VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
@@ -43,12 +45,17 @@ namespace fwrk {
     VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
   };
 
+  struct RenderInfo {
+    std::optional<VkExtent2D> render_area;
+    uint32_t layer_count = 1;
+    uint32_t view_mask = 0;
+  };
 
   struct Pass {
     std::string name;
     std::function<void(VkCommandBuffer cmd)> func;
     std::vector<ImageAccess> images;
     std::vector<BufferAccess> buffers;
-    std::optional<VkExtent2D> render_area;
+    RenderInfo render_info;
   };
 } // namespace fwrk
