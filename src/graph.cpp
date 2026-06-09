@@ -257,6 +257,7 @@ void fwrk::Graph::execute(VkCommandBuffer cmd)
     for (const auto& img_barr: pass.deps.image_barriers) {
       const Resource* resource = &context_->resources_.at(*img_barr.resource.id); // sorta unsafe
       if (resource->type == ResourceType::Alias) {
+        assert(resource->target != UINT32_MAX && "Received an alias that targets nothing");
         resource = &context_->resources_.at(resource->target); // sorta unsafe
       }
       ImageResource& image = context_->images_.at(resource->slot);
@@ -292,6 +293,7 @@ void fwrk::Graph::execute(VkCommandBuffer cmd)
     for (const auto& buf_barr: pass.deps.buffer_barriers) {
       const Resource* resource = &context_->resources_.at(*buf_barr.resource.id); // sorta unsafe
       if (resource->type == ResourceType::Alias) {
+        assert((resource->target != UINT32_MAX) && "Received an alias that targets nothing");
         resource = &context_->resources_.at(resource->target); // sorta unsafe
       }
       BufferResource& buffer = context_->buffers_.at(resource->slot);
@@ -337,6 +339,7 @@ void fwrk::Graph::execute(VkCommandBuffer cmd)
       for (auto& att: pass.render->color_atts) {
         const Resource* resource = &context_->resources_.at(*att.resource.id); // sorta unsafe
         if (resource->type == ResourceType::Alias) {
+          assert(resource->target != UINT32_MAX && "Received an alias that targets nothing");
           resource = &context_->resources_.at(resource->target); // sorta unsafe
         }
         ImageResource& image = context_->images_.at(resource->slot);
@@ -347,6 +350,7 @@ void fwrk::Graph::execute(VkCommandBuffer cmd)
         if (att.resolve) {
           const Resource* resolve_resource = &context_->resources_.at(*att.resolve->resource.id); // sorta unsafe
           if (resolve_resource->type == ResourceType::Alias) {
+            assert(resource->target != UINT32_MAX && "Received an alias that targets nothing");
             resolve_resource = &context_->resources_.at(resolve_resource->target); // sorta unsafe
           }
           info.resolveImageView = context_->get_image_view(att.resolve->subresource, att.view_type, *resolve_resource);
@@ -367,6 +371,7 @@ void fwrk::Graph::execute(VkCommandBuffer cmd)
         const RenderingAttachmentInfo& att = *pass.render->depth_att;
         const Resource* resource = &context_->resources_.at(*att.resource.id); // sorta unsafe
         if (resource->type == ResourceType::Alias) {
+          assert(resource->target != UINT32_MAX && "Received an alias that targets nothing");
           resource = &context_->resources_.at(resource->target); // sorta unsafe
         }
         ImageResource& image = context_->images_.at(resource->slot);
@@ -378,6 +383,7 @@ void fwrk::Graph::execute(VkCommandBuffer cmd)
         if (att.resolve) {
           const Resource* resolve_resource = &context_->resources_.at(*att.resolve->resource.id); // sorta unsafe
           if (resolve_resource->type == ResourceType::Alias) {
+            assert(resource->target != UINT32_MAX && "Received an alias that targets nothing");
             resolve_resource = &context_->resources_.at(resolve_resource->target); // sorta unsafe
           }
           info.resolveImageView = context_->get_image_view(att.resolve->subresource, att.view_type, *resolve_resource);
@@ -416,6 +422,7 @@ void fwrk::Graph::execute(VkCommandBuffer cmd)
   for (const auto& [id, state]: end_image_states_) {
     const Resource* resource = &context_->resources_.at(*id.id);
     if (resource->type == ResourceType::Alias) {
+      assert(resource->target != UINT32_MAX && "Received an alias that targets nothing");
       resource = &context_->resources_.at(resource->target); // sorta unsafe
     }
     ImageResource& image = context_->images_.at(resource->slot);
@@ -446,6 +453,7 @@ void fwrk::Graph::execute(VkCommandBuffer cmd)
   for (const auto& [id, state]: end_buffer_states_) {
     const Resource* resource = &context_->resources_.at(*id.id);
     if (resource->type == ResourceType::Alias) {
+      assert(resource->target != UINT32_MAX && "Received an alias that targets nothing");
       resource = &context_->resources_.at(resource->target); // sorta unsafe
     }
     BufferResource& buffer = context_->buffers_.at(resource->slot);
