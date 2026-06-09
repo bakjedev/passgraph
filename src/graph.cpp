@@ -332,7 +332,7 @@ void fwrk::Graph::execute(VkCommandBuffer cmd)
     // ---------------------
     VkRenderingInfo rendering_info{};
     std::vector<VkRenderingAttachmentInfo> color_attachments;
-    std::optional<VkRenderingAttachmentInfo> depth_attachment;
+    std::optional<VkRenderingAttachmentInfo> depth_attachment{};
     if (pass.render) {
       VkExtent2D extent{UINT32_MAX, UINT32_MAX};
 
