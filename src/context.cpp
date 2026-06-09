@@ -73,6 +73,7 @@ void fwrk::Context::update_buffer(const ResourceID resource, const BufferResourc
 fwrk::ResourceID fwrk::Context::create_alias(const ResourceID resource, std::string name)
 {
   if (!resource.id) return {};
+  if (resources_[*resource.id].type == ResourceType::Alias) return {};
 
   const auto id = resources_.size();
   resources_.emplace_back(ResourceType::Alias, *resource.id, std::move(name));
@@ -83,6 +84,7 @@ fwrk::ResourceID fwrk::Context::create_alias(const ResourceID resource, std::str
 void fwrk::Context::update_alias(const ResourceID alias, const ResourceID resource)
 {
   if (!alias.id || !resource.id) return;
+  if (resources_[*resource.id].type == ResourceType::Alias) return;
   resources_[*alias.id].target = *resource.id;
 }
 
