@@ -30,7 +30,7 @@ int main()
 
     std::vector<fwrk::ResourceID> swapchain_imports(swapchain.images.size());
     fwrk::ResourceID depth_import{};
-    fwrk::ResourceID swapchain_alias = context.create_alias();
+    fwrk::ResourceID swapchain_proxy = context.create_proxy();
 
     auto import_resources = [&] {
       const fwrk::ImageResource color_img_desc{.type = VK_IMAGE_TYPE_2D,
@@ -109,7 +109,7 @@ int main()
       fwrk::Graph& graph = context.graph();
 
       graph.add_graphics_pass("RenderPass")
-          .set_color_attachment({.resource = {swapchain_alias},
+          .set_color_attachment({.resource = {swapchain_proxy},
                                  .load_op = fwrk::LoadOp::Clear,
                                  .store_op = fwrk::StoreOp::Store,
                                  .clear_value = {1.0F, 1.0F, 1.0F, 1.0F}})
@@ -134,7 +134,7 @@ int main()
 
       graph.add_graphics_pass("RenderPass")
           .set_color_attachment(
-              {.resource = {swapchain_alias}, .load_op = fwrk::LoadOp::Load, .store_op = fwrk::StoreOp::Store})
+              {.resource = {swapchain_proxy}, .load_op = fwrk::LoadOp::Load, .store_op = fwrk::StoreOp::Store})
           .set_depth_attachment(
               {.resource = {depth_import}, .load_op = fwrk::LoadOp::Load, .store_op = fwrk::StoreOp::Store})
           .set_execute([&](VkCommandBuffer cb) {
@@ -162,7 +162,7 @@ int main()
         compiled = true;
       }
 
-      context.update_alias(swapchain_alias, swapchain_imports[image_index]);
+      context.update_proxy(swapchain_proxy, swapchain_imports[image_index]);
 
       graph.execute(cmd);
 

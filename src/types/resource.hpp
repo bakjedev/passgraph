@@ -6,7 +6,7 @@
 #include "util/flat_hash_map.hpp"
 
 namespace fwrk {
-  enum class ResourceType : uint8_t { Image, Buffer, Alias };
+  enum class ResourceType : uint8_t { Image, Buffer, Proxy };
 
   struct ResourceID {
     std::optional<uint32_t> id;
