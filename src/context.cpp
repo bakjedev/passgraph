@@ -70,7 +70,8 @@ void fwrk::Context::update_buffer(const ResourceID resource, const BufferResourc
   raw_buffers_[res.raw] = raw;
 }
 
-VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const Resource& resource)
+VkImageView fwrk::Context::get_image_view(const VkImageSubresourceRange& subresource, const VkImageViewType view_type,
+                                          const Resource& resource)
 {
   if (device_ == VK_NULL_HANDLE) return VK_NULL_HANDLE;
   VkImage image_raw = raw_images_[resource.raw];
@@ -78,8 +79,8 @@ VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const
 
   auto& views = views_cache_[resource.slot];
 
-  const ViewKey key = {image_access.base_level, image_access.level_count, image_access.base_layer,
-                       image_access.layer_count, image_access.view_type};
+  const ViewKey key = {subresource.aspectMask,     subresource.baseMipLevel, subresource.levelCount,
+                       subresource.baseArrayLayer, subresource.layerCount,   view_type};
   auto it = views.find(key);
   if (it != views.end()) {
     return it->second;
@@ -90,17 +91,10 @@ VkImageView fwrk::Context::get_image_view(const ImageAccess& image_access, const
       .pNext = nullptr,
       .flags = 0u,
       .image = image_raw,
-      .viewType = image_access.view_type,
+      .viewType = view_type,
       .format = image.format,
       .components = {},
-      .subresourceRange =
-          {
-              .aspectMask = image.aspect,
-              .baseMipLevel = image_access.base_level,
-              .levelCount = image_access.level_count,
-              .baseArrayLayer = image_access.base_layer,
-              .layerCount = image_access.layer_count,
-          },
+      .subresourceRange = subresource,
   };
 
   VkImageView view = VK_NULL_HANDLE;

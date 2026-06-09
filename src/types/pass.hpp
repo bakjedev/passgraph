@@ -17,23 +17,23 @@ namespace fwrk {
     VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     ClearValue clear_value;
-    bool is_depth = false;
-    std::optional<ResourceID> resolve = std::nullopt;
+    std::optional<uint32_t> resolve = std::nullopt;
     VkResolveModeFlags resolve_mode = VK_RESOLVE_MODE_NONE;
   };
 
   struct ImageAccess {
     ResourceID resource;
-    std::optional<Attachment> attachment = std::nullopt;
-    uint32_t base_level = 0;
-    uint32_t level_count = 0;
-    uint32_t base_layer = 0;
-    uint32_t layer_count = 0;
-    VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
+    std::optional<Attachment> attachment;
+    VkImageAspectFlags aspect{};
+    uint32_t base_level{};
+    uint32_t level_count{};
+    uint32_t base_layer{};
+    uint32_t layer_count{};
+    VkImageViewType view_type{};
 
-    VkAccessFlags2 access = VK_ACCESS_2_NONE;
-    VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
-    VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkAccessFlags2 access{};
+    VkPipelineStageFlags2 stages{};
+    VkImageLayout layout{};
   };
 
   struct BufferAccess {

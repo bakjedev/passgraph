@@ -15,6 +15,13 @@ namespace fwrk {
     std::optional<uint32_t> pass = std::nullopt;
   };
 
+  struct ResolveInfo {
+    ResourceID resource;
+    VkResolveModeFlags mode = VK_RESOLVE_MODE_AVERAGE_BIT;
+    uint32_t base_level = 0;
+    uint32_t base_layer = 0;
+  };
+
   struct AttachmentInfo {
     ResourceAccess resource;
     LoadOp load_op = LoadOp::DontCare;
@@ -23,6 +30,8 @@ namespace fwrk {
     uint32_t base_level = 0;
     uint32_t base_layer = 0;
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
+    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_NONE;
+    std::optional<ResolveInfo> resolve;
   };
 
   struct ImageInfo {
@@ -33,6 +42,7 @@ namespace fwrk {
     uint32_t base_layer = 0;
     uint32_t layer_count = VK_REMAINING_ARRAY_LAYERS;
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
+    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_NONE;
   };
 
   struct StorageImageInfo {
@@ -42,6 +52,7 @@ namespace fwrk {
     uint32_t base_layer = 0;
     uint32_t layer_count = 1;
     VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_2D;
+    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_NONE;
   };
 
   struct BufferInfo {
@@ -49,12 +60,6 @@ namespace fwrk {
     VkPipelineStageFlags2 stages = VK_PIPELINE_STAGE_2_NONE;
     VkDeviceSize size = VK_WHOLE_SIZE;
     VkDeviceSize offset = 0;
-  };
-
-  struct ResolveInfo {
-    ResourceID resource;
-    ResourceID color;
-    VkResolveModeFlags mode = VK_RESOLVE_MODE_AVERAGE_BIT;
   };
 
   template<typename T>
@@ -95,7 +100,6 @@ namespace fwrk {
 
     GraphicsPassBuilder& set_color_attachment(const AttachmentInfo& info);
     GraphicsPassBuilder& set_depth_attachment(const AttachmentInfo& info);
-    GraphicsPassBuilder& set_resolve_attachment(const ResolveInfo& info);
 
     GraphicsPassBuilder& set_vertex_buffer_input(const BufferInfo& info);
     GraphicsPassBuilder& set_index_buffer_input(const BufferInfo& info);

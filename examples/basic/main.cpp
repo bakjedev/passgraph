@@ -130,7 +130,7 @@ int main()
 
       graph.set_image_end_state(
           swapchain_imports[image_index],
-          {.access = VK_ACCESS_2_NONE, .stage = VK_PIPELINE_STAGE_2_NONE, .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR});
+          {.access = VK_ACCESS_2_NONE, .stages = VK_PIPELINE_STAGE_2_NONE, .layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR});
 
       graph.compile();
       graph.execute(cmd);

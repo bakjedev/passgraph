@@ -33,16 +33,45 @@ namespace fwrk {
 
     explicit Graph(Context* context) : context_(context) {}
 
-    struct DependencyInfo {
-      VkDependencyInfo dep_info{};
-      std::vector<VkImageMemoryBarrier2> image_barriers;
-      std::vector<VkBufferMemoryBarrier2> buffer_barriers;
+    struct AttachmentResolveInfo {
+      ResourceID resource;
+      VkResolveModeFlags mode;
+      VkImageSubresourceRange subresource;
+    };
+
+    struct RenderingAttachmentInfo {
+      ResourceID resource;
+      VkImageSubresourceRange subresource;
+      VkImageViewType view_type;
+      VkImageLayout layout;
+      VkAttachmentLoadOp load_op;
+      VkAttachmentStoreOp store_op;
+      VkClearValue clear_value;
+      std::optional<AttachmentResolveInfo> resolve;
     };
 
     struct RenderingInfo {
-      VkRenderingInfo rendering_info{};
-      std::vector<VkRenderingAttachmentInfo> attachment_infos;
-      std::optional<VkRenderingAttachmentInfo> depth_info;
+      std::vector<RenderingAttachmentInfo> color_atts;
+      std::optional<RenderingAttachmentInfo> depth_att;
+      RenderInfo render_info;
+    };
+
+    struct ImageMemoryBarrier {
+      ResourceID resource;
+      ImageState dst_state{};
+      VkImageSubresourceRange subresource_range{};
+    };
+
+    struct BufferMemoryBarrier {
+      ResourceID resource;
+      BufferState dst_state{};
+      VkDeviceSize size{};
+      VkDeviceSize offset{};
+    };
+
+    struct DependencyInfo {
+      std::vector<ImageMemoryBarrier> image_barriers;
+      std::vector<BufferMemoryBarrier> buffer_barriers;
     };
 
     struct CompiledPass {
@@ -59,10 +88,12 @@ namespace fwrk {
     std::vector<uint32_t> sorted_pass_ids_;
     std::vector<CompiledPass> compiled_passes_;
 
-    flat_hash_map<ResourceID, ImageState> end_image_states_;
-    flat_hash_map<ResourceID, BufferState> end_buffer_states_;
+    std::vector<std::pair<ResourceID, ImageState>> end_image_states_;
+    std::vector<std::pair<ResourceID, BufferState>> end_buffer_states_;
     DependencyInfo end_dep_info_;
 
     Context* context_;
+
+    static VkImageAspectFlags get_aspect_for_format(VkFormat format);
   };
 } // namespace fwrk

@@ -15,7 +15,7 @@ namespace fwrk {
     seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
   }
 
-  using ViewKey = std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, VkImageViewType>;
+  using ViewKey = std::tuple<VkImageAspectFlags, uint32_t, uint32_t, uint32_t, uint32_t, VkImageViewType>;
 
   struct ViewKeyHasher {
     size_t operator()(const ViewKey& key) const
@@ -26,6 +26,7 @@ namespace fwrk {
       hash_combine(seed, std::get<2>(key));
       hash_combine(seed, std::get<3>(key));
       hash_combine(seed, std::get<4>(key));
+      hash_combine(seed, std::get<5>(key));
       return seed;
     }
   };
@@ -75,7 +76,8 @@ namespace fwrk {
 
     std::vector<flat_hash_map<ViewKey, VkImageView, ViewKeyHasher>> views_cache_{};
 
-    VkImageView get_image_view(const ImageAccess& image_access, const Resource& resource);
+    VkImageView get_image_view(const VkImageSubresourceRange& subresource, VkImageViewType view_type,
+                               const Resource& resource);
     void destroy_views(uint32_t slot);
 
     template<ImageInterface I>

@@ -4,7 +4,7 @@
 namespace fwrk {
   struct BufferState {
     VkAccessFlags2 access;
-    VkPipelineStageFlags2 stage;
+    VkPipelineStageFlags2 stages;
 
     static const BufferState Undefined;
 

@@ -4,7 +4,7 @@
 namespace fwrk {
   struct ImageState {
     VkAccessFlags2 access;
-    VkPipelineStageFlags2 stage;
+    VkPipelineStageFlags2 stages;
     VkImageLayout layout;
 
     static const ImageState Undefined;

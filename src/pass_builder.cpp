@@ -10,13 +10,17 @@ fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_color_attachment(const
   if (!try_access(info.resource.id)) return *this;
   auto& res = graph_->resource_deps_[info.resource.id];
 
+  VkImageAspectFlags aspect = info.aspect;
+  if (info.aspect == VK_IMAGE_ASPECT_NONE) {
+    aspect |= VK_IMAGE_ASPECT_COLOR_BIT;
+  }
+
   ImageAccess& image = pass_->images.emplace_back(
       info.resource.id,
       Attachment{.load_op = static_cast<VkAttachmentLoadOp>(info.load_op),
                  .store_op = static_cast<VkAttachmentStoreOp>(info.store_op),
-                 .clear_value = info.clear_value,
-                 .is_depth = false},
-      info.base_level, 1, info.base_layer, 1, info.view_type, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                 .clear_value = info.clear_value},
+      aspect, info.base_level, 1, info.base_layer, 1, info.view_type, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
   if (info.load_op == LoadOp::Load && !res.write_passes.empty()) {
@@ -27,6 +31,23 @@ fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_color_attachment(const
   }
 
   res.write_passes.push_back(id_);
+
+  if (info.resolve) {
+    if (!try_access(info.resolve->resource)) return *this;
+    auto& res_olve = graph_->resource_deps_[info.resolve->resource];
+
+    const auto idx = static_cast<uint32_t>(pass_->images.size());
+    pass_->images.emplace_back(info.resolve->resource, std::nullopt, aspect, info.resolve->base_level, 1,
+                               info.resolve->base_layer, 1, info.view_type, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                               VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    res_olve.write_passes.push_back(id_);
+
+    image.attachment->resolve = idx;
+    image.attachment->resolve_mode = info.resolve->mode;
+  }
+
   return *this;
 }
 
@@ -35,13 +56,17 @@ fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_depth_attachment(const
   if (!try_access(info.resource.id)) return *this;
   auto& res = graph_->resource_deps_[info.resource.id];
 
+  VkImageAspectFlags aspect = info.aspect;
+  if (info.aspect == VK_IMAGE_ASPECT_NONE) {
+    aspect |= VK_IMAGE_ASPECT_DEPTH_BIT;
+  }
+
   ImageAccess& image = pass_->images.emplace_back(
       info.resource.id,
       Attachment{.load_op = static_cast<VkAttachmentLoadOp>(info.load_op),
                  .store_op = static_cast<VkAttachmentStoreOp>(info.store_op),
-                 .clear_value = info.clear_value,
-                 .is_depth = true},
-      info.base_level, 1, info.base_layer, 1, info.view_type, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                 .clear_value = info.clear_value},
+      aspect, info.base_level, 1, info.base_layer, 1, info.view_type, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
       VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
@@ -53,24 +78,22 @@ fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_depth_attachment(const
   }
 
   res.write_passes.push_back(id_);
-  return *this;
-}
 
-fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_resolve_attachment(const ResolveInfo& info)
-{
-  if (!try_access(info.resource)) return *this;
-  auto& res = graph_->resource_deps_[info.resource];
-  for (auto& image_access: pass_->images) {
-    if (image_access.resource == info.color) {
-      if (image_access.attachment.has_value()) {
-        image_access.attachment->resolve = info.resource;
-        image_access.attachment->resolve_mode = info.mode;
+  if (info.resolve) {
+    if (!try_access(info.resolve->resource)) return *this;
+    auto& res_olve = graph_->resource_deps_[info.resolve->resource];
 
-        res.write_passes.push_back(id_);
+    const auto idx = static_cast<uint32_t>(pass_->images.size());
+    pass_->images.emplace_back(
+        info.resolve->resource, std::nullopt, aspect, info.resolve->base_level, 1, info.resolve->base_layer, 1,
+        info.view_type, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-        break;
-      }
-    }
+    res_olve.write_passes.push_back(id_);
+
+    image.attachment->resolve = idx;
+    image.attachment->resolve_mode = info.resolve->mode;
   }
   return *this;
 }
@@ -116,7 +139,7 @@ T& fwrk::PassBuilder<T>::set_image_read(const ImageInfo& info)
   set_possible_explicit_read(info.resource.pass, res);
 
   ImageAccess& image = pass_->images.emplace_back(
-      info.resource.id, std::nullopt, info.base_level, info.level_count, info.base_layer, info.layer_count,
+      info.resource.id, std::nullopt, info.aspect, info.base_level, info.level_count, info.base_layer, info.layer_count,
       info.view_type, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT, info.stages, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
   set_stages_fallback(image.stages);
@@ -163,9 +186,9 @@ T& fwrk::PassBuilder<T>::set_storage_image_read(const StorageImageInfo& info)
   res.read_passes.push_back(id_);
   set_possible_explicit_read(info.resource.pass, res);
 
-  ImageAccess& image = pass_->images.emplace_back(info.resource.id, std::nullopt, info.base_level, 1, info.base_layer,
-                                                  info.layer_count, info.view_type, VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
-                                                  info.stages, VK_IMAGE_LAYOUT_GENERAL);
+  ImageAccess& image = pass_->images.emplace_back(
+      info.resource.id, std::nullopt, info.aspect, info.base_level, 1, info.base_layer, info.layer_count,
+      info.view_type, VK_ACCESS_2_SHADER_STORAGE_READ_BIT, info.stages, VK_IMAGE_LAYOUT_GENERAL);
 
   set_stages_fallback(image.stages);
 
@@ -179,8 +202,8 @@ T& fwrk::PassBuilder<T>::set_storage_image_write(const StorageImageInfo& info)
   auto& res = graph_->resource_deps_[info.resource.id];
 
   ImageAccess& image = pass_->images.emplace_back(
-      info.resource.id, std::nullopt, info.base_level, 1, info.base_layer, info.layer_count, info.view_type,
-      VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, info.stages, VK_IMAGE_LAYOUT_GENERAL);
+      info.resource.id, std::nullopt, info.aspect, info.base_level, 1, info.base_layer, info.layer_count,
+      info.view_type, VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT, info.stages, VK_IMAGE_LAYOUT_GENERAL);
 
   set_stages_fallback(image.stages);
 
