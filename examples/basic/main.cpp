@@ -30,7 +30,7 @@ int main()
 
     std::vector<fwrk::ResourceID> swapchain_imports(swapchain.images.size());
     fwrk::ResourceID depth_import{};
-    fwrk::ResourceID swapchain_alias{};
+    fwrk::ResourceID swapchain_alias = context.create_alias();
 
     auto import_resources = [&] {
       const fwrk::ImageResource color_img_desc{.type = VK_IMAGE_TYPE_2D,
@@ -46,9 +46,6 @@ int main()
           context.update_image(res, color_img_desc, swapchain.images[i]);
         } else {
           res = context.import_image(color_img_desc, swapchain.images[i], "Swapchain image");
-        }
-        if (!swapchain_alias) {
-          swapchain_alias = context.create_alias(swapchain_imports[0]);
         }
       }
 
