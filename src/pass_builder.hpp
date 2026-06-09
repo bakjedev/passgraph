@@ -88,7 +88,7 @@ namespace fwrk {
     GraphicsPassBuilder& set_index_buffer_input(const BufferInfo& info);
     GraphicsPassBuilder& set_indirect_buffer_input(const BufferInfo& info);
 
-    GraphicsPassBuilder& set_render_area(RenderArea area);
+    GraphicsPassBuilder& set_render_area(VkExtent2D area);
   };
 
   class ComputePassBuilder : public PassBuilder<ComputePassBuilder> {

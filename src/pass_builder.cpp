@@ -93,7 +93,7 @@ fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_indirect_buffer_input(
   return *this;
 }
 
-fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_render_area(const RenderArea area)
+fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_render_area(const VkExtent2D area)
 {
   pass_->render_area = area;
   return *this;

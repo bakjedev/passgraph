@@ -22,11 +22,6 @@ namespace fwrk {
     VkResolveModeFlags resolve_mode = VK_RESOLVE_MODE_NONE;
   };
 
-  struct RenderArea {
-    uint32_t width{};
-    uint32_t height{};
-  };
-
   struct ImageAccess {
     ResourceID resource;
     std::optional<Attachment> attachment = std::nullopt;
@@ -54,6 +49,6 @@ namespace fwrk {
     std::function<void(VkCommandBuffer cmd)> func;
     std::vector<ImageAccess> images;
     std::vector<BufferAccess> buffers;
-    std::optional<RenderArea> render_area;
+    std::optional<VkExtent2D> render_area;
   };
 } // namespace fwrk
