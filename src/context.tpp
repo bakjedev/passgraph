@@ -62,6 +62,5 @@ fwrk::ImageResource fwrk::Context::construct_image(const I& image, const ImageSt
                        .size = image.size(),
                        .format = image.format(),
                        .usage = image.usage(),
-                       .aspect = image.aspect(),
                        .state = state};
 }
