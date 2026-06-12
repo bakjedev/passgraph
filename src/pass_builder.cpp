@@ -112,7 +112,18 @@ fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_index_buffer_input(con
 
 fwrk::GraphicsPassBuilder& fwrk::GraphicsPassBuilder::set_indirect_buffer_input(const BufferInfo& info)
 {
-  set_buffer_read(info, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
+  if (!try_access(info.resource.id)) return *this;
+  auto& res = graph_->resource_deps_[info.resource.id];
+  res.read_passes.push_back(id_);
+  set_possible_explicit_read(info.resource.pass, res);
+
+  BufferAccess& buffer = pass_->buffers.emplace_back(info.resource.id, info.size, info.offset,
+                                                     VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, info.stages);
+
+  if (buffer.stages == VK_PIPELINE_STAGE_2_NONE) {
+    buffer.stages = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+  }
+
   return *this;
 }
 
